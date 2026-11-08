@@ -103,9 +103,9 @@ class Dispatch(Agent):
                 for name in self.offers:
                     if name != selected:
                         self.send(name, "REFUSE", {"reason": "A closer team was selected"})
-        elif action == "INFORM" and data.get("state") == "failed":
+        elif action == "INFORM" and data.get("state") in ("failed", "unavailable"):
             self.status = "Reassigning task"
-            self.system.result = "Team failure: finding another team"
+            self.system.result = "Team failure: finding another team" if data["state"] == "failed" else "Team unavailable: finding another team"
             self.collect_offers()
         elif action == "INFORM" and data.get("state") == "completed":
             self.status = "Repair completed"
@@ -135,6 +135,10 @@ class RepairTeam(Agent):
                 self.status = "Offer sent"
                 self.send("Dispatch", "PROPOSE", {"distance_km": distance})
         elif action == "ACCEPT":
+            reserve = getattr(self.system, "reserve_team", None)
+            if reserve and not reserve(self.name):
+                self.send("Dispatch", "INFORM", {"state": "unavailable"})
+                return
             if self.fail_on_accept:
                 self.failed = True
                 self.available = False

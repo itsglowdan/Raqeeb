@@ -19,7 +19,7 @@ def finish(monitor, approve=False):
     for _ in range(25000):
         monitor.advance()
         if approve:
-            for zone, city in monitor.cities.items():
+            for zone, city in monitor.regions.items():
                 if city['active'] and city['active']['sim'].waiting_approval:
                     monitor.approve(zone, True)
         if monitor.finished:
@@ -73,12 +73,12 @@ class MonitoringTests(unittest.TestCase):
         self.assertEqual(len(monitor.deliveries), 3)
         self.assertTrue(monitor.finished)
 
-    def test_approval_does_not_block_other_cities(self):
+    def test_approval_does_not_block_other_zones(self):
         monitor = ContinuousMonitor([reading(pressure=35, flow=110), reading('Zone_4')], interval=0.5)
         finish(monitor)
         self.assertEqual(monitor.processed, 2)
-        self.assertTrue(monitor.cities['Zone_1']['active']['sim'].waiting_approval)
-        self.assertEqual(monitor.cities['Zone_4']['classification'], 'Normal')
+        self.assertTrue(monitor.regions['Zone_1']['active']['sim'].waiting_approval)
+        self.assertEqual(monitor.regions['Zone_4']['classification'], 'Normal')
         monitor.approve('Zone_1', True)
         self.assertTrue(monitor.running)
         finish(monitor)
@@ -98,8 +98,9 @@ class MonitoringTests(unittest.TestCase):
         finish(monitor)
         self.assertEqual(monitor.completed, 2)
         self.assertEqual(monitor.failure_count, 1)
-        self.assertTrue(monitor.cities['Zone_1']['teams'][0]['failed'])
+        self.assertTrue(monitor.fleet['Team A']['failed'])
         self.assertTrue(all(item['sim'].assigned_team == 'Team B' for item in monitor.incidents))
+        self.assertEqual(len(monitor.fleet), 2)
 
     def test_rejected_and_unavailable_incidents_remain_open(self):
         monitor = ContinuousMonitor([reading(pressure=35, flow=110)])
@@ -107,16 +108,16 @@ class MonitoringTests(unittest.TestCase):
         monitor.approve('Zone_1', False)
         finish(monitor)
         self.assertEqual(monitor.completed, 0)
-        self.assertIn('rejected', monitor.city_status('Zone_1')[1])
+        self.assertIn('rejected', monitor.zone_status('Zone_1')[1])
         monitor = ContinuousMonitor([reading(pressure=50, flow=110)], unavailable=True)
         finish(monitor)
-        self.assertIn('No available team', monitor.city_status('Zone_1')[1])
+        self.assertIn('No available team', monitor.zone_status('Zone_1')[1])
 
     def test_later_normal_reading_does_not_hide_open_leak(self):
         monitor = ContinuousMonitor([reading(pressure=35, flow=110), reading()], interval=0.5)
         finish(monitor)
-        self.assertEqual(monitor.cities['Zone_1']['classification'], 'Normal')
-        self.assertEqual(monitor.city_status('Zone_1')[0], 'Confirmed leak')
+        self.assertEqual(monitor.regions['Zone_1']['classification'], 'Normal')
+        self.assertEqual(monitor.zone_status('Zone_1')[0], 'Confirmed leak')
 
     def test_saudi_positions_fixed_and_values_unchanged(self):
         rows, _ = load_data()
@@ -125,7 +126,7 @@ class MonitoringTests(unittest.TestCase):
             mapped = display_reading(row)
             self.assertEqual(mapped['Pressure'], row['Pressure'])
             self.assertEqual(mapped['Flow_Rate'], row['Flow_Rate'])
-            self.assertTrue(18 < mapped['Latitude'] < 27 and 39 < mapped['Longitude'] < 51)
+            self.assertTrue(24.6 < mapped['Latitude'] < 24.9 and 46.5 < mapped['Longitude'] < 46.9)
             key = tuple(row[k] for k in ['Zone', 'Block', 'Pipe'])
             point = mapped['Latitude'], mapped['Longitude']
             if key in positions:
@@ -149,7 +150,7 @@ class MonitoringTests(unittest.TestCase):
     def test_execution_error_does_not_block_remaining_readings(self):
         monitor = ContinuousMonitor([reading(pressure=50, flow=110), reading('Zone_4')])
         run(monitor, 3)
-        sim = monitor.cities['Zone_1']['active']['sim']
+        sim = monitor.regions['Zone_1']['active']['sim']
         def broken(message):
             raise RuntimeError('Test failure')
         sim.agents['Dispatch'].receive = broken
@@ -157,6 +158,49 @@ class MonitoringTests(unittest.TestCase):
         self.assertEqual(monitor.error_count, 1)
         self.assertEqual(monitor.processed, 2)
         self.assertEqual(monitor.completed, 0)
+
+
+    def test_shared_fleet_never_double_booked_and_queues_busy_tasks(self):
+        rows = [reading(f'Zone_{i}', pressure=50, flow=110) for i in range(1, 6)]
+        monitor = ContinuousMonitor(rows, interval=0.5, repair_ticks=20)
+        monitor.running = True
+        max_busy = 0
+        saw_wait = False
+        for _ in range(1000):
+            monitor.advance()
+            booked = [name for name, team in monitor.fleet.items() if team['owner']]
+            max_busy = max(max_busy, len(booked))
+            self.assertLessEqual(len(booked), 2)
+            active_names = []
+            for region in monitor.regions.values():
+                if region['active']:
+                    incident = region['active']
+                    saw_wait |= incident['status'] == 'Waiting for team'
+                    for team in incident['sim'].teams:
+                        if team.remaining:
+                            active_names.append(team.name)
+                            self.assertEqual(monitor.fleet[team.name]['owner'], incident['id'])
+            self.assertEqual(len(active_names), len(set(active_names)))
+            if monitor.finished:
+                break
+        self.assertTrue(monitor.finished)
+        self.assertEqual(monitor.completed, 5)
+        self.assertEqual(max_busy, 2)
+        self.assertTrue(saw_wait)
+        self.assertTrue(all(team['owner'] is None for team in monitor.fleet.values()))
+
+    def test_stale_offer_cannot_reserve_already_booked_team(self):
+        monitor = ContinuousMonitor([reading()])
+        from simulation import Simulation
+        first = Simulation(display_reading(reading()))
+        first.conversation_id = 'first'
+        second = Simulation(display_reading(reading('Zone_2')))
+        second.conversation_id = 'second'
+        self.assertTrue(monitor.reserve_team(first, 'Team A'))
+        self.assertFalse(monitor.reserve_team(second, 'Team A'))
+        self.assertTrue(monitor.reserve_team(second, 'Team B'))
+        self.assertEqual(monitor.fleet['Team A']['owner'], 'first')
+        self.assertEqual(monitor.fleet['Team B']['owner'], 'second')
 
 
 if __name__ == '__main__':

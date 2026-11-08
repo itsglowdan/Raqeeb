@@ -104,5 +104,11 @@ class SimulationTests(unittest.TestCase):
         self.assertAlmostEqual(distance_km((0, 0), (1, 0)), 111.195, places=2)
 
 
+    def test_demo_leaks_match_reference_labels(self):
+        for name in ("Minor leak", "Major leak + team failure"):
+            index, _ = scenario_reading(self.readings, name)
+            self.assertEqual(self.labels[index], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

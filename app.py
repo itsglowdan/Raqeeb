@@ -8,7 +8,7 @@ import streamlit as st
 
 from agents import distance_km
 from data_loader import load_data
-from monitoring import CITIES, ContinuousMonitor
+from monitoring import ZONES, ContinuousMonitor
 from simulation import evaluate, scenario_reading
 
 
@@ -34,7 +34,7 @@ st.markdown('''
  <path d="M11 29l5 5 10-12" stroke="#103D70" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
  </svg></div>
  <div><small>WATER NETWORK MONITORING</small><h1>Raqeeb <span lang="ar">| رقيب</span></h1>
- <p>Continuous water leak monitoring and maintenance dispatch · University simulation</p></div>
+ <p>Riyadh water network · Leak monitoring and maintenance dispatch</p></div>
 </div>''', unsafe_allow_html=True)
 
 with st.sidebar:
@@ -60,14 +60,14 @@ with st.sidebar:
     with st.expander("3 · Team conditions", expanded=False):
         fail_first = st.checkbox("Fail Team A after assignment", value=scenario == "Major leak + team failure")
         unavailable = st.checkbox("Both teams unavailable")
-        st.caption("Each city has two local teams. Failed teams remain unavailable until Reset.")
+        st.caption("Two teams serve all zones. Reset restores failed teams.")
     if st.button("Load / Reset", width="stretch", type="primary") or "monitor" not in st.session_state:
         index = scenario_reading(readings, scenario)[0] if source == "Scenarios" else int(row_number) - 1
         st.session_state.monitor = ContinuousMonitor(
             readings, index, interval, pressure_limit, flow_limit, major_limit,
             repair_ticks, fail_first, unavailable)
-        st.session_state.focus_city = readings[index]["Zone"]
-        st.session_state.follow_live = False
+        st.session_state.focus_zone = readings[index]["Zone"]
+        st.session_state.follow_zone = False
     st.caption("Apply changes with Load / Reset.")
 
 
@@ -98,15 +98,15 @@ def sensor_chart(frame, field, title, limit):
     return (chart + rule).properties(height=240)
 
 
-def city_cards(monitor):
-    st.subheader("Kingdom overview")
-    st.caption("Virtual city networks")
-    zones = list(CITIES)
+def zone_cards(monitor):
+    st.subheader("Riyadh overview")
+    st.caption("Five virtual operating zones · Two shared repair teams")
+    zones = list(ZONES)
     for group in (zones[:3], zones[3:]):
         columns = st.columns(len(group))
         for column, zone in zip(columns, group):
-            city = monitor.cities[zone]
-            status, task = monitor.city_status(zone)
+            city = monitor.regions[zone]
+            status, task = monitor.zone_status(zone)
             color = {"Normal": "normal", "Suspected": "suspected", "Confirmed leak": "leak"}.get(status, "empty")
             reading = city["latest"]
             pressure = f"{reading['Pressure']:.1f}" if reading else "—"
@@ -115,24 +115,24 @@ def city_cards(monitor):
             open_count = sum(key[0] == zone for key in monitor.open_incidents)
             with column:
                 st.markdown(f'''<div class="city-card {color}">
-                 <div class="city-heading"><h3>{CITIES[zone]['name']}</h3><span>{escape(status)}</span></div>
+                 <div class="city-heading"><h3>{ZONES[zone]['name']}</h3><span>{escape(status)}</span></div>
                  <p>{zone} · 5 blocks · {open_count} open incidents</p>
                  <div class="city-readings"><div><small>Pressure · PSI</small><strong>{pressure}</strong></div>
                  <div><small>Flow · L/min</small><strong>{flow}</strong></div></div>
                  <p>Latest reading: {escape(latest_status)}</p><div class="city-task">{escape(task)}</div>
                  </div>''', unsafe_allow_html=True)
-                st.button(f"View {CITIES[zone]['name']}", key=f"view_{zone}", width="stretch",
-                          on_click=select_city, args=(zone,))
+                st.button(f"View {ZONES[zone]['name']}", key=f"view_{zone}", width="stretch",
+                          on_click=select_zone, args=(zone,))
     st.caption("Normal · Suspected · Confirmed leak")
 
 
-def select_city(zone):
-    st.session_state.focus_city = zone
-    st.session_state.follow_live = False
+def select_zone(zone):
+    st.session_state.focus_zone = zone
+    st.session_state.follow_zone = False
 
 
-def pin_city():
-    st.session_state.follow_live = False
+def pin_zone():
+    st.session_state.follow_zone = False
 
 
 def live_agents(monitor):
@@ -149,8 +149,12 @@ def live_agents(monitor):
         for column, name in zip(st.columns(3), group):
             working = name in active
             snapshot = monitor.role_states.get(name, {})
-            status = snapshot.get("status", states[name])
-            location = snapshot.get("city", "")
+            status = states[name] if name in monitor.fleet else snapshot.get("status", states[name])
+            location = snapshot.get("zone", "")
+            if name in monitor.fleet:
+                owner = monitor.fleet[name]["owner"]
+                task = next((item for item in monitor.open_incidents.values() if item["id"] == owner), None)
+                location = ZONES[task["zone"]]["name"] if task else "Shared fleet"
             with column:
                 st.markdown(f'<div class="agent-card {"working" if working else ""}">'
                             f'<div class="agent-card-title"><span class="agent-dot"></span><strong>{name}</strong></div>'
@@ -159,19 +163,24 @@ def live_agents(monitor):
     recent = list(monitor.deliveries)[-3:]
     if recent:
         lines = [f'<div class="live-message"><strong>{escape(m["sender"])}</strong> → '
-                 f'<strong>{escape(m["receiver"])}</strong><span>{escape(m["city"])} · {escape(m["performative"])}</span></div>' for m in reversed(recent)]
+                 f'<strong>{escape(m["receiver"])}</strong><span>{escape(ZONES[m["zone"]]["name"])} · {escape(m["performative"])}</span></div>' for m in reversed(recent)]
         st.markdown('<div class="live-messages">' + ''.join(lines) + '</div>', unsafe_allow_html=True)
 
 
-@st.fragment(run_every=0.5)
+@st.fragment(run_every=0.5 if st.session_state.monitor.running else None)
 def dashboard():
     monitor = st.session_state.monitor
     run, pause = st.columns(2)
     if run.button("Run", width="stretch", type="primary", disabled=monitor.finished):
         monitor.running = True
+        st.rerun()
     if pause.button("Pause", width="stretch"):
         monitor.running = False
+        st.rerun()
+    was_running = monitor.running
     monitor.advance()
+    if was_running and not monitor.running:
+        st.rerun()
     result = "All readings processed" if monitor.finished else "Running" if monitor.running else "Paused" if monitor.observed else "Ready"
     st.markdown(f'<div class="raqeeb-status"><h3>{result}</h3></div>', unsafe_allow_html=True)
     st.progress(monitor.processed / monitor.total_readings, text=f"Readings processed: {monitor.processed:,} / {monitor.total_readings:,}")
@@ -184,32 +193,31 @@ def dashboard():
 
     st.subheader("Live agents")
     live_agents(monitor)
-    for zone, city in monitor.cities.items():
+    for zone, city in monitor.regions.items():
         incident = city["active"]
         if incident and incident["sim"].waiting_approval:
-            st.warning(f"{CITIES[zone]['name']}: major leak at {incident['sim'].location['area']}. Approval required.")
+            st.warning(f"{ZONES[zone]['name']}: major leak at {incident['sim'].location['area']}. Approval required.")
             yes, no = st.columns(2)
-            if yes.button(f"Approve dispatch · {CITIES[zone]['name']}", key=f"yes_{zone}", type="primary", width="stretch"):
+            if yes.button(f"Approve dispatch · {ZONES[zone]['name']}", key=f"yes_{zone}", type="primary", width="stretch"):
                 monitor.approve(zone, True)
-                st.rerun(scope="fragment")
-            if no.button(f"Reject dispatch · {CITIES[zone]['name']}", key=f"no_{zone}", width="stretch"):
+                st.rerun()
+            if no.button(f"Reject dispatch · {ZONES[zone]['name']}", key=f"no_{zone}", width="stretch"):
                 monitor.approve(zone, False)
-                st.rerun(scope="fragment")
+                st.rerun()
 
-    st.divider()
-    city_cards(monitor)
     st.divider()
     selection, follow = st.columns([2, 1])
     with follow:
-        follow_live = st.checkbox("Follow active city", key="follow_live")
-    if follow_live:
-        st.session_state.focus_city = monitor.focus_zone
+        follow_zone = st.checkbox("Follow active zone", key="follow_zone")
+    if follow_zone:
+        st.session_state.focus_zone = monitor.focus_zone
     with selection:
-        zone = st.selectbox("City", list(CITIES), format_func=lambda key: CITIES[key]["name"], key="focus_city", on_change=pin_city)
+        zone = st.selectbox("Zone", list(ZONES), format_func=lambda key: ZONES[key]["name"], key="focus_zone", on_change=pin_zone)
     sim = monitor.selected_sim(zone)
-    live, performance = st.tabs(["Pressure & flow", "Agent performance"])
+    st.subheader("Monitoring")
+    live, performance = st.tabs(["Pressure & flow", "System counters"])
     with live:
-        frame = pd.DataFrame([row for row in monitor.history if row["city"] == CITIES[zone]["name"]])
+        frame = pd.DataFrame([row for row in monitor.history if row["zone"] == zone])
         if not frame.empty:
             a, b = st.columns(2)
             with a:
@@ -218,31 +226,14 @@ def dashboard():
                 st.altair_chart(sensor_chart(frame, "Flow_Rate", "Flow (L/min)", monitor.settings["flow_limit"]), width="stretch")
             st.caption("Dashed line: detection limit · Simulation time")
         else:
-            st.info("No reading for this city yet. Run the stream or choose another city.")
+            st.info("No readings for this zone yet.")
         if monitor.performance:
-            st.altair_chart(trend(list(monitor.performance), "seconds", ["confirmed", "completed"], "Incidents / repairs (all cities)"), width="stretch")
+            st.altair_chart(trend(list(monitor.performance), "seconds", ["confirmed", "completed"], "Incidents / repairs"), width="stretch")
     with performance:
-        a, b, c, d = st.columns(4)
+        a, b, c = st.columns(3)
         a.metric("Messages sent", monitor.total_messages)
-        b.metric("Agent calls", monitor.total_calls)
-        c.metric("Team failures", monitor.failure_count)
-        d.metric("Execution errors", monitor.error_count)
-        st.metric("Average agent execution (ms)", f"{monitor.total_duration_ms / max(1, monitor.total_calls):.5f}")
-        if monitor.traces:
-            trace_frame = pd.DataFrame(monitor.traces)
-            grouped = trace_frame.groupby(["seconds", "agent"], as_index=False)["duration_ms"].mean()
-            chart = alt.Chart(grouped).mark_line(point=True).encode(
-                x=alt.X("seconds:Q", title="Simulation time (seconds)"),
-                y=alt.Y("duration_ms:Q", title="Mean execution time (ms)"), color="agent:N",
-                tooltip=["seconds:Q", "agent:N", "duration_ms:Q"]).properties(height=250)
-            st.altair_chart(chart, width="stretch")
-            st.dataframe(trace_frame, hide_index=True, width="stretch")
-        if monitor.performance:
-            count, faults = st.columns(2)
-            with count:
-                st.altair_chart(trend(list(monitor.performance), "seconds", ["messages"], "Messages sent (all cities)"), width="stretch")
-            with faults:
-                st.altair_chart(trend(list(monitor.performance), "seconds", ["failures", "errors"], "Failures / errors (all cities)"), width="stretch")
+        b.metric("Team failures", monitor.failure_count)
+        c.metric("Execution errors", monitor.error_count)
     st.divider()
     details, messages, incidents, evaluation = st.tabs(["Map", "Message log", "Incidents", "Dataset evaluation"])
     with details:
@@ -251,13 +242,13 @@ def dashboard():
             if sim:
                 st.write(" / ".join(sim.reading[key] for key in ("Zone", "Block", "Pipe")))
                 points = [{"latitude": sim.reading["Latitude"], "longitude": sim.reading["Longitude"], "Point": "Incident / reading", "Distance (km)": 0.0}]
-                points += [{"latitude": t.position[0], "longitude": t.position[1], "Point": t.name,
-                            "Distance (km)": round(distance_km(t.position, (sim.reading["Latitude"], sim.reading["Longitude"])), 3)} for t in sim.teams]
+                points += [{"latitude": t["position"][0], "longitude": t["position"][1], "Point": name,
+                            "Distance (km)": round(distance_km(t["position"], (sim.reading["Latitude"], sim.reading["Longitude"])), 3)} for name, t in monitor.fleet.items()]
                 st.dataframe(pd.DataFrame(points), hide_index=True, width="stretch")
             else:
-                points = [{"latitude": CITIES[zone]["latitude"], "longitude": CITIES[zone]["longitude"], "Point": CITIES[zone]["name"]}]
+                points = [{"latitude": ZONES[zone]["latitude"], "longitude": ZONES[zone]["longitude"], "Point": ZONES[zone]["name"]}]
             st.map(pd.DataFrame(points), latitude="latitude", longitude="longitude", zoom=11, height=280)
-            st.caption("Virtual Saudi locations · Straight-line distances")
+            st.caption("Virtual locations in Riyadh · Straight-line distances")
     with messages:
         st.subheader("Message log")
         log = [{**m, "content": json.dumps(m["content"], ensure_ascii=False)} for m in monitor.messages]
@@ -266,12 +257,12 @@ def dashboard():
                 "sender": "From", "receiver": "To", "performative": "Message type", "content": "Content", "seconds": "Simulation seconds"})
         else:
             st.info("Press Run to start.")
-        st.download_button("Download message log", json.dumps(list(monitor.messages), indent=2), file_name="raqeeb_messages.json", mime="application/json")
+        st.download_button("Download message log", json.dumps(list(monitor.messages), indent=2), file_name="raqeeb_messages.json", mime="application/json", key="message_download", on_click="ignore")
 
     with incidents:
         recent = {item["id"]: item for item in monitor.incidents}
         recent.update({item["id"]: item for item in monitor.open_incidents.values()})
-        rows = [{"ID": item["id"], "City": CITIES[item["zone"]]["name"],
+        rows = [{"ID": item["id"], "Zone": ZONES[item["zone"]]["name"],
                  "Pipe": "/".join(item["key"]), "Status": item["status"],
                  "Created (s)": item["created_seconds"], "Finished (s)": item["finished_seconds"]} for item in recent.values()]
         if rows:
@@ -286,6 +277,9 @@ def dashboard():
             card.metric("F1 score" if key == "f1" else key.title(), f"{scores[key]:.2%}")
         st.dataframe(pd.DataFrame([scores]), hide_index=True, width="stretch")
 
+
+    st.divider()
+    zone_cards(monitor)
 
 
 dashboard()

@@ -1,74 +1,78 @@
 # Model design
 
-## Agent flow
+## Network and agents
 
-Pressure Monitor ↔ Usage Monitor → Leak Locator → Dispatch → Repair Teams
+Raqeeb simulates five operating zones within Riyadh. It has five agent roles: Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team. The Repair Team role has exactly two instances shared across the network. Zones do not own separate teams.
 
-Five agent roles cooperate through an in-memory ACL-like message queue. Each city has two local Repair Team instances. Team positions and failures persist between incidents. The simulator is local and sequential; cities have independent incident queues.
+```mermaid
+flowchart LR
+    P[Pressure Monitor] <-->|REQUEST / INFORM| U[Usage Monitor]
+    P -->|REQUEST| L[Leak Locator]
+    L -->|REQUEST| D[Dispatch]
+    S[Supervisor] -->|ACCEPT / REFUSE| D
+    D -->|CFP / ACCEPT| A[Team A]
+    D -->|CFP / ACCEPT| B[Team B]
+    A -->|PROPOSE / REFUSE / INFORM| D
+    B -->|PROPOSE / REFUSE / INFORM| D
+```
 
-Each reading is checked in three visible steps: pressure request, flow check, joint confirmation. Confirmed incidents enter their city queue. Each city advances one incident workflow per tick while other cities continue. A major leak waits for approval. If a team fails, dispatch asks for new offers. Repeated alerts for an open pipe are merged.
+Each reading takes three visible sensor-check steps. Confirmed incidents enter the corresponding zone's queue. One workflow per zone advances independently, while both teams share a central reservation table. No team can own two repair tasks at once. Each accepted offer is checked against current availability. Stale offers trigger another offer round. If both teams are busy, the incident waits and retries when capacity becomes available. If teams are disabled or failed, the incident remains unresolved. Position changes are retained after repair completion.
 
-## Agents and PEAS
+## PEAS and agent types
 
-| Agent / type | Performance | Environment | Actuators | Sensors | Reason |
+| Agent / type | Performance | Environment | Actuators | Sensors | Justification |
 | --- | --- | --- | --- | --- | --- |
-| Pressure Monitor / Reactive | Correct alerts and joint confirmation | Current reading | REQUEST flow check and location | Pressure and flow reply | Threshold rules |
-| Usage Monitor / Reactive | Correct flow checks | Current reading | INFORM pressure agent | Flow and pressure request | Responds to current values |
-| Leak Locator / Reactive | Correct incident location | Pipe identifiers and virtual position | REQUEST dispatch | Confirmed reading | Uses known fields |
-| Dispatch / Deliberative | Closest available team; approval respected | Incident and team offers | CFP, ACCEPT, REFUSE | Offers, failures, completion and approval | Compares offers and replans |
-| Repair Team / Hybrid | Complete repairs and report inability | Team position, availability and task | PROPOSE, REFUSE, INFORM | CFP and ACCEPT | Reacts to offers and maintains repair state |
+| Pressure / Reactive | Correct joint confirmation | Reading and flow reply | REQUEST check and location | Pressure and INFORM reply | Uses threshold rules |
+| Usage / Reactive | Correct flow check | Current reading | INFORM pressure agent | Flow and request | Reacts to current values |
+| Locator / Reactive | Correct pipe identifiers and position | Virtual network | REQUEST dispatch | Confirmed reading | Extracts known location fields |
+| Dispatch / Deliberative | Assign nearest available team and respect approval | Incident, offers, fleet reservations | CFP, ACCEPT, REFUSE | Proposals, availability, failure/completion and approval | Compares alternatives and replans |
+| Repair Team / Hybrid | Complete assigned task or report inability | Position, reservation and task | PROPOSE, REFUSE, INFORM | CFP and ACCEPT | Reacts to requests and maintains a multi-step task |
 
-## Environment
+## Environment and variables
 
-The simulator is accessible because its input and state are available to the program. Decisions are deterministic for the same inputs and approval actions. Execution-time measurements vary by machine. The environment changes during execution. Scheduling and messages are discrete, while sensor values and positions are continuous-valued. The CSV order is not actual historical sensor time.
-
-Run processes the selected starting row through the final row once, without wrapping. Pause freezes the clock and resumes at the same point. Each tick represents 0.5 simulation seconds. At most one sensor-reading conversation is checked at a time, taking three ticks; the selected reading interval is a minimum interval. City incident workflows advance alongside it. After the final reading, runnable repair work drains before stopping. Approval waits do not force an endless loop; their controls remain available and can resume pending work after scanning finishes.
-
-## Variables
+The simulation is accessible because it exposes its inputs and states. Decisions are deterministic for the same inputs and user actions. The world is dynamic during execution. The simulation is discrete because scheduling, messages and state changes advance in ticks. Pressure, flow and coordinates are continuous-valued inputs. Actual Python execution duration varies by machine. These classifications describe the simulator, not the real water network.
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| Pressure limit | 54 PSI | Strictly lower pressure is abnormal |
-| Flow limit | 90 L/min | Strictly higher flow is abnormal |
-| Major pressure limit | 40 PSI | Confirmed leaks at or below this value require approval |
-| Repair duration | 8 steps | Duration after task acceptance |
+| Pressure limit | 54 PSI | Strictly lower is abnormal |
+| Flow limit | 90 L/min | Strictly higher is abnormal |
+| Major pressure limit | 40 PSI | Confirmed leak at or below this needs approval |
+| Repair duration | 8 steps | Work duration after acceptance |
 | Minimum reading interval | 2 seconds | Minimum time between starting readings |
-| Team A failure | Off except failure scenario | Fails when assigned |
-| Both teams unavailable | Off | Leaves incidents unresolved |
+| Team A failure | Off except failure scenario | Assignment triggers failure |
+| Both teams unavailable | Off | No repair can start |
+| Team position / owner | Shared fleet | Determines offers and prevents double booking |
 
-Zone_1 maps to Riyadh, Zone_2 to Madinah, Zone_3 to Abha, Zone_4 to Makkah and Zone_5 to Dammam. For display, latitude = city latitude + (block number − 3) × 0.012, longitude = city longitude + (pipe number − 3) × 0.012 degrees. Original CSV coordinates and sensor values stay unchanged. Teams start 0.002 and 0.04 degrees north of the city center. Haversine distance selects the closest available team. This is not road routing or measured leak severity.
+One tick is 0.5 simulated seconds. A sensor check takes three ticks, so the reading interval is a minimum, not guaranteed real-time sampling. Run processes the selected row through the final row once. Pause freezes reading and repair progress. At the end, runnable work drains. Pending approvals stay visible and can resume work without rereading rows.
 
-## Communication
+## Locations
 
-Messages contain sender, receiver, performative, content, ontology, conversation ID, step, city, original row and simulation time. Each reading has a unique conversation ID. Delivered and cancelled flags distinguish processed messages from queued or merged duplicate requests.
+Zone_1 is centered at (24.7136, 46.6753), Zone_2 at (24.7736, 46.6753), Zone_3 at (24.6536, 46.6753), Zone_4 at (24.7136, 46.6093), and Zone_5 at (24.7136, 46.7413). The labels Central, North, South, West and East describe fictional operating areas, not official districts.
 
-| Sender → receiver | Performative | Content / outcome |
+Pipe display latitude = zone latitude + (block number − 3) × 0.012. Longitude = zone longitude + (pipe number − 3) × 0.012. The 125 resulting positions span about 19 × 18 km around Riyadh. Team A starts at (24.7136, 46.6653), Team B at (24.7336, 46.7053). These are invented starting points; no maintenance-center dataset is used. Haversine distance compares offers. Source values and original coordinates remain unchanged in the CSV.
+
+## Messages
+
+Messages include sender, receiver, performative, content, ontology (`water-leak`), conversation ID, step, zone, source row and simulation time. A reading has a unique conversation ID. Delivered/cancelled fields distinguish processed messages and merged duplicate requests.
+
+| Sender → receiver | Performative | Purpose |
 | --- | --- | --- |
-| Pressure → Usage | REQUEST | Reading and low-pressure result |
-| Usage → Pressure | INFORM | High-flow result; confirm only if both are abnormal |
-| Pressure → Locator | REQUEST | Confirmed reading |
-| Locator → Dispatch | REQUEST | Area, coordinates and major flag |
-| Supervisor → Dispatch | ACCEPT / REFUSE | Proceed or leave unresolved |
-| Dispatch → teams | CFP | Incident position |
-| Team → Dispatch | PROPOSE / REFUSE | Distance offer or unavailability |
-| Dispatch → selected team | ACCEPT | Start repair |
-| Dispatch → other team | REFUSE | Closer team selected |
-| Team → Dispatch | INFORM | Accepted, failed or completed |
+| Pressure → Usage | REQUEST | Check flow for the same reading |
+| Usage → Pressure | INFORM | Return high-flow result |
+| Pressure → Locator | REQUEST | Locate confirmed incident |
+| Locator → Dispatch | REQUEST | Send area, position and severity |
+| Supervisor → Dispatch | ACCEPT / REFUSE | Allow or reject dispatch |
+| Dispatch → teams | CFP | Request distance offers |
+| Team → Dispatch | PROPOSE / REFUSE | Offer availability or decline |
+| Dispatch → chosen team | ACCEPT | Start reserved task |
+| Team → Dispatch | INFORM | Accepted, unavailable, failed or completed |
 
-Local traces measure actual Python execution duration, excluding UI delays and approval waits. Team failures are distinct from execution errors. Global counters and charts track incidents, repairs, messages, failures and errors. Pressure and flow charts use simulated arrival times and show detection limits. Reference labels are used only for evaluation.
+Unavailable after acceptance means an offer became stale; dispatch starts a new round. Team failure is distinct from a Python execution error. Repeat alerts for an open Zone/Block/Pipe merge into that incident.
 
-## Scenarios
+## Scenarios and interface
 
-1. Normal: row 1. The monitors exchange checks without dispatching a team.
-2. Minor leak: row 29. Pressure and flow confirm a leak; the nearest available local team repairs it automatically.
-3. Major leak and team failure: row 567. The affected incident waits for approval while other readings continue. With Team A failure enabled, assignment to Team A produces a failure and another offer round; Team B completes the task. Rejecting approval leaves the incident unresolved. The nearest team can change as positions persist.
+1. Normal, row 1: pressure and flow are normal; monitor checks end without dispatch.
+2. Minor leak, row 36: both limits are exceeded; the closest available shared team repairs the incident automatically.
+3. Major leak and team failure, row 567: the incident waits for approval, other zones keep monitoring, Team A fails when assigned, and Team B completes the repair. Rejecting approval leaves the incident unresolved.
 
-## Interface
-
-The agent panel is first, showing actual per-role activity, city, status, and delivered messages. City cards are below it. Selecting a city filters its sensor charts and map. Additional tabs show performance, messages, incidents and evaluation. Activity highlighting follows actual calls, stops while paused, and supports reduced-motion preferences.
-
-## Screenshots
-
-- [Live agents](screenshots/agents.png)
-- [Kingdom overview](screenshots/overview.png)
-- [Monitoring](screenshots/monitoring.png)
+The interface starts with live agent activity and messages. It keeps exactly three charts: pressure, flow, and confirmed incidents versus repairs. Counters show messages, team failures and execution errors. Map, message log, incident list and evaluation follow. The final section is Riyadh overview with five operating-zone cards.

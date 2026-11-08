@@ -87,7 +87,7 @@ def scenario_reading(readings, scenario):
         pressure, flow = reading["Pressure"], reading["Flow_Rate"]
         matches = {
             "Normal": pressure >= 54 and flow <= 90,
-            "Minor leak": 40 < pressure < 54 and flow > 90,
+            "Minor leak": 40 < pressure < 50 and flow > 90,
             "Major leak + team failure": pressure <= 40 and flow > 90,
         }
         if matches[scenario]:
