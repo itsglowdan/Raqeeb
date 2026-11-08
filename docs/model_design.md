@@ -39,11 +39,11 @@ The simulation is accessible because it exposes its inputs and states. Decisions
 | Major pressure limit | 40 PSI | Confirmed leak at or below this needs approval |
 | Repair duration | 8 steps | Work duration after acceptance |
 | Minimum reading interval | 2 seconds | Minimum time between starting readings |
-| Team A failure | Off except failure scenario | Assignment triggers failure |
-| Both teams unavailable | Off | No repair can start |
+| Team A failure | Off; user selected | Assignment triggers failure |
+| Team A / Team B available | Both on | Disabled teams cannot be dispatched |
 | Team position / owner | Shared fleet | Determines offers and prevents double booking |
 
-One tick is 0.5 simulated seconds. A sensor check takes three ticks, so the reading interval is a minimum, not guaranteed real-time sampling. Run processes the selected row through the final row once. Pause freezes reading and repair progress. At the end, runnable work drains. Pending approvals stay visible and can resume work without rereading rows.
+One tick is 0.5 simulated seconds. A sensor check takes three ticks, so the reading interval is a minimum, not guaranteed real-time sampling. Dataset mode processes the selected row through the final row once. Manual input processes a user-created reading or ordered sequence once. Pause freezes reading and repair progress. At the end, runnable work drains. Pending approvals stay visible and can resume work without rereading rows.
 
 ## Locations
 
@@ -53,7 +53,7 @@ Pipe display latitude = zone latitude + (block number − 3) × 0.012. Longitude
 
 ## Messages
 
-Messages include sender, receiver, performative, content, ontology (`water-leak`), conversation ID, step, zone, source row and simulation time. A reading has a unique conversation ID. Delivered/cancelled fields distinguish processed messages and merged duplicate requests.
+Messages include sender, receiver, performative, content, ontology (`water-leak`), conversation ID, step, zone, input-source row and simulation time. A reading has a unique conversation ID. Delivered/cancelled fields distinguish processed messages and merged duplicate requests.
 
 | Sender → receiver | Performative | Purpose |
 | --- | --- | --- |
@@ -71,8 +71,10 @@ Unavailable after acceptance means an offer became stale; dispatch starts a new 
 
 ## Scenarios and interface
 
-1. Normal, row 1: pressure and flow are normal; monitor checks end without dispatch.
-2. Minor leak, row 36: both limits are exceeded; the closest available shared team repairs the incident automatically.
-3. Major leak and team failure, row 567: the incident waits for approval, other zones keep monitoring, Team A fails when assigned, and Team B completes the repair. Rejecting approval leaves the incident unresolved.
+1. Enter 65 PSI and 80 L/min at Zone_1/Block_1/Pipe_1. Both monitor checks are normal; no dispatch occurs.
+2. Enter 50 PSI and 110 L/min at the same location with failure injection off. The agents confirm a minor leak and the nearest shared team repairs it.
+3. Enter 35 PSI and 110 L/min and enable Team A failure. The agents identify a major leak, wait for approval, and reassign from Team A to Team B after failure. Rejecting approval leaves it unresolved.
+
+These are reproducible manual test inputs, not preset selections. Users can combine their own readings with Add reading. Manual readings have no ground-truth leakage label. Dataset evaluation remains separate.
 
 The interface starts with live agent activity and messages. It keeps exactly three charts: pressure, flow, and confirmed incidents versus repairs. Counters show messages, team failures and execution errors. Map, message log, incident list and evaluation follow. The final section is Riyadh overview with five operating-zone cards.

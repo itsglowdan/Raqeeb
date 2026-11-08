@@ -29,6 +29,6 @@ Dataset limits: synthetic readings; no timestamps or real Riyadh topology. Origi
 
 ## Validation
 
-- 25 automated tests passed, including all 5,000 rows, concurrent shared-team repairs, busy-team waiting and stale-offer reservation checks.
+- 31 automated tests passed, including all 5,000 rows, concurrent shared-team repairs, busy-team waiting and stale-offer reservation checks.
 - Browser checks passed for Run/Pause, stopping at the dataset end, exactly three monitoring charts, zone selection, the final overview position, major approval, team failure recovery and mobile overflow.
-- The normal, minor and major demonstration rows are 1, 36 and 567. The two leak examples have positive reference labels. No reference label enters the agents' decision inputs.
+- Manual demonstration inputs are 65/80, 50/110 and 35/110 (PSI / L/min), with Team A failure enabled for the last example. Manual readings have no reference labels; evaluation uses the original dataset only. Dataset test fixtures remain separate from the interface.

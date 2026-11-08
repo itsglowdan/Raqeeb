@@ -9,7 +9,8 @@ import streamlit as st
 from agents import distance_km
 from data_loader import load_data
 from monitoring import ZONES, ContinuousMonitor
-from simulation import evaluate, scenario_reading
+from simulation import evaluate
+from manual_input import make_reading
 
 
 st.set_page_config(page_title="Raqeeb | رقيب", page_icon="💧", layout="wide")
@@ -37,20 +38,79 @@ st.markdown('''
  <p>Riyadh water network · Leak monitoring and maintenance dispatch</p></div>
 </div>''', unsafe_allow_html=True)
 
+def manual_reading():
+    return make_reading(st.session_state.manual_pressure, st.session_state.manual_flow,
+                        st.session_state.manual_zone, st.session_state.manual_block,
+                        st.session_state.manual_pipe)
+
+
+def add_manual_reading():
+    st.session_state.manual_readings.append(manual_reading())
+
+
+def remove_manual_reading():
+    if st.session_state.manual_readings:
+        st.session_state.manual_readings.pop()
+
+
+def reset_manual_inputs():
+    st.session_state.update(manual_pressure=65.0, manual_flow=80.0, manual_zone="Zone_1",
+                            manual_block="Block_1", manual_pipe="Pipe_1", manual_readings=[],
+                            fail_first=False, team_a_available=True, team_b_available=True)
+
+
+def load_monitor():
+    draft = st.session_state.draft
+    st.session_state.monitor = ContinuousMonitor(draft["readings"], **draft["settings"])
+    st.session_state.monitor.source = draft["source"]
+    st.session_state.loaded_signature = st.session_state.draft_signature
+    st.session_state.focus_zone = draft["readings"][draft["settings"]["start_index"]]["Zone"]
+    st.session_state.follow_zone = False
+
+
+if "manual_readings" not in st.session_state:
+    st.session_state.manual_readings = []
+
 with st.sidebar:
     st.markdown('<div class="raqeeb-side">Raqeeb | رقيب</div>', unsafe_allow_html=True)
     st.caption("Simulation settings")
-    st.subheader("1 · Reading stream")
-    source = st.radio("Reading source", ["Dataset", "Scenarios"])
-    scenario = st.selectbox("Scenario", ["Normal", "Minor leak", "Major leak + team failure"],
-                            disabled=source != "Scenarios")
+    st.subheader("1 · Reading source")
+    source = st.radio("Reading source", ["Dataset", "Manual input"])
     if source == "Dataset":
         row_number = st.number_input("Starting dataset row", 1, len(readings), 1)
+        input_readings = readings
+        start_index = int(row_number) - 1
     else:
-        row_number = scenario_reading(readings, scenario)[0] + 1
-        st.caption(f"Starting dataset row: {row_number}")
+        if "manual_pressure" not in st.session_state:
+            st.session_state.manual_pressure = 65.0
+        if "manual_flow" not in st.session_state:
+            st.session_state.manual_flow = 80.0
+        st.number_input("Pressure (PSI)", min_value=0.0, value=None, step=1.0, key="manual_pressure")
+        st.number_input("Flow (L/min)", min_value=0.0, value=None, step=1.0, key="manual_flow")
+        st.selectbox("Input zone", list(ZONES), format_func=lambda key: ZONES[key]["name"], key="manual_zone")
+        st.selectbox("Block", [f"Block_{i}" for i in range(1, 6)], key="manual_block")
+        st.selectbox("Pipe", [f"Pipe_{i}" for i in range(1, 6)], key="manual_pipe")
+        try:
+            current_reading = manual_reading()
+        except ValueError:
+            current_reading = None
+            st.error("Enter valid pressure and flow values.")
+        st.button("Add reading", on_click=add_manual_reading, disabled=current_reading is None, width="stretch")
+        remove, reset = st.columns(2)
+        remove.button("Remove last", on_click=remove_manual_reading,
+                      disabled=not st.session_state.manual_readings, width="stretch")
+        reset.button("Reset inputs", on_click=reset_manual_inputs, width="stretch")
+        if st.session_state.manual_readings:
+            st.caption(f"Sequence: {len(st.session_state.manual_readings)} readings")
+            st.dataframe(pd.DataFrame(st.session_state.manual_readings)[
+                ["Pressure", "Flow_Rate", "Zone", "Block", "Pipe"]], hide_index=True, width="stretch")
+            st.caption("Add each reading to the sequence before Run.")
+            input_readings = [dict(row) for row in st.session_state.manual_readings]
+        else:
+            st.caption("Run uses the current reading. Add readings to build a sequence.")
+            input_readings = [current_reading] if current_reading else []
+        start_index = 0
     interval = st.slider("Minimum reading interval (seconds)", 0.5, 5.0, 2.0, 0.5)
-    st.caption("Starts at the selected row and stops at the last reading.")
     with st.expander("2 · Detection limits", expanded=False):
         pressure_limit = st.slider("Low pressure below (PSI)", 30, 70, 54)
         flow_limit = st.slider("High flow above (L/min)", 50, 120, 90)
@@ -58,17 +118,27 @@ with st.sidebar:
                                 min(40, pressure_limit - 1))
         repair_ticks = st.slider("Repair duration (steps)", 3, 20, 8)
     with st.expander("3 · Team conditions", expanded=False):
-        fail_first = st.checkbox("Fail Team A after assignment", value=scenario == "Major leak + team failure")
-        unavailable = st.checkbox("Both teams unavailable")
+        fail_first = st.checkbox("Fail Team A after assignment", key="fail_first")
+        if "team_a_available" not in st.session_state:
+            st.session_state.team_a_available = True
+        if "team_b_available" not in st.session_state:
+            st.session_state.team_b_available = True
+        team_a_available = st.checkbox("Team A available", key="team_a_available")
+        team_b_available = st.checkbox("Team B available", key="team_b_available")
+        unavailable = not (team_a_available or team_b_available)
         st.caption("Two teams serve all zones. Reset restores failed teams.")
-    if st.button("Load / Reset", width="stretch", type="primary") or "monitor" not in st.session_state:
-        index = scenario_reading(readings, scenario)[0] if source == "Scenarios" else int(row_number) - 1
-        st.session_state.monitor = ContinuousMonitor(
-            readings, index, interval, pressure_limit, flow_limit, major_limit,
-            repair_ticks, fail_first, unavailable)
-        st.session_state.focus_zone = readings[index]["Zone"]
-        st.session_state.follow_zone = False
-    st.caption("Apply changes with Load / Reset.")
+    settings = dict(start_index=start_index, interval=interval, pressure_limit=pressure_limit,
+                    flow_limit=flow_limit, major_limit=major_limit, repair_ticks=repair_ticks,
+                    fail_first=fail_first, unavailable=unavailable,
+                    team_a_available=team_a_available, team_b_available=team_b_available)
+    st.session_state.draft = {"source": source, "readings": input_readings, "settings": settings}
+    st.session_state.draft_signature = (source, tuple(settings.items()),
+        tuple(tuple(row.items()) for row in input_readings) if source == "Manual input" else ())
+    if st.button("Load / Reset", width="stretch", type="primary", disabled=not input_readings) or "monitor" not in st.session_state:
+        load_monitor()
+    if st.session_state.loaded_signature != st.session_state.draft_signature:
+        st.session_state.monitor.running = False
+    st.caption("Run applies the current inputs.")
 
 
 def trend(data, x, columns, y_title):
@@ -171,7 +241,10 @@ def live_agents(monitor):
 def dashboard():
     monitor = st.session_state.monitor
     run, pause = st.columns(2)
-    if run.button("Run", width="stretch", type="primary", disabled=monitor.finished):
+    if run.button("Run", width="stretch", type="primary", disabled=not st.session_state.draft["readings"] or (monitor.finished and st.session_state.loaded_signature == st.session_state.draft_signature)):
+        if st.session_state.loaded_signature != st.session_state.draft_signature:
+            load_monitor()
+            monitor = st.session_state.monitor
         monitor.running = True
         st.rerun()
     if pause.button("Pause", width="stretch"):
@@ -271,7 +344,8 @@ def dashboard():
             st.info("No confirmed incidents yet.")
 
     with evaluation:
-
+        if monitor.source == "Manual input":
+            st.caption("Evaluation uses the reference dataset, not manual readings.")
         scores = evaluate(readings, labels, monitor.settings["pressure_limit"], monitor.settings["flow_limit"])
         for card, key in zip(st.columns(4), ("accuracy", "precision", "recall", "f1")):
             card.metric("F1 score" if key == "f1" else key.title(), f"{scores[key]:.2%}")

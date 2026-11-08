@@ -3,7 +3,7 @@
 
 ## Abstract
 
-Water leaks can waste treated water and delay maintenance when unusual sensor readings are not checked quickly. Raqeeb is a Python multi-agent simulation that demonstrates how monitoring and repair coordination can work together in a local water network. It represents five fictional operating zones in Riyadh, with five blocks and twenty-five pipe identifiers per zone. Pressure Monitor and Usage Monitor check the same incoming reading and confirm a leak only when both pressure and flow are abnormal. Leak Locator identifies the affected pipe, while Dispatch compares offers from two shared repair teams. Major incidents need supervisor approval before dispatch. Team reservations prevent overlapping assignments, and a failed team can be replaced by the other team. An interactive interface shows agent activity, messages, readings, incidents and repair progress. The system uses 5,000 synthetic records, with original sensor values and reference labels preserved. Riyadh display coordinates and team positions are simulated, so the project is not connected to a real utility network. Tests cover normal readings, confirmed leaks, approval, unavailable teams, failure recovery and competing tasks. The main objectives are to demonstrate cooperative detection, reduce unnecessary dispatch, respect human approval and make maintenance coordination easier to follow. The intended users are water-network supervisors, maintenance planners and students studying agent-based systems.
+Water leaks can waste treated water and delay maintenance when unusual sensor readings are not checked quickly. Raqeeb is a Python multi-agent simulation that demonstrates how monitoring and repair coordination can work together in a local water network. It represents five fictional operating zones in Riyadh, with five blocks and twenty-five pipe identifiers per zone. Pressure Monitor and Usage Monitor check the same incoming reading and confirm a leak only when both pressure and flow are abnormal. Leak Locator identifies the affected pipe, while Dispatch compares offers from two shared repair teams. Major incidents need supervisor approval before dispatch. Team reservations prevent overlapping assignments, and a failed team can be replaced by the other team. An interactive interface shows agent activity, messages, readings, incidents and repair progress. The system supports 5,000 synthetic source records and user-entered readings or sequences. Original values and labels are preserved for dataset evaluation. Riyadh display coordinates and team positions are simulated, so the project is not connected to a real utility network. Tests cover normal readings, confirmed leaks, approval, unavailable teams, failure recovery and competing tasks. The main objectives are to demonstrate cooperative detection, reduce unnecessary dispatch, respect human approval and make maintenance coordination easier to follow. The intended users are water-network supervisors, maintenance planners and students studying agent-based systems.
 
 ## 1. Introduction
 
@@ -67,7 +67,7 @@ All application logic and interface definitions are written in Python. Streamlit
 
 Each incoming reading takes three visible monitor steps. A joint confirmation creates an incident, unless that pipe already has an open incident. Each zone has a queue and one active incident workflow. The five workflows share a fleet reservation table containing only Team A and Team B. Both teams can repair different incidents at the same time, but one team cannot own two tasks. A team rechecks its reservation when accepting an offer. If an offer became stale, Dispatch requests new offers. An incident waits when both healthy teams are busy; disabled or failed teams cannot be selected.
 
-A major incident waits for approval while monitoring of other zones continues. Run processes the selected starting row through the final row once. Pause freezes readings and repairs. After the final reading, runnable tasks finish. Pending approvals remain available without restarting the dataset. A tick represents 0.5 simulation seconds. Since each monitor conversation takes three ticks, the adjustable reading interval is a minimum interval.
+A major incident waits for approval while monitoring of other zones continues. Dataset mode processes the selected starting row through the final row once. Manual input processes the current values or a user-built ordered sequence. There are no preset scenario selections. Pause freezes readings and repairs. After the final reading, runnable tasks finish. Pending approvals remain available without restarting the dataset. A tick represents 0.5 simulation seconds. Since each monitor conversation takes three ticks, the adjustable reading interval is a minimum interval.
 
 ### 4.2 Agents, PEAS and types
 
@@ -79,7 +79,7 @@ A major incident waits for approval while monitoring of other zones continues. R
 | Dispatch / Deliberative | Compare offers, respect approval and reassign failures | Appropriate available-team selection | Incident, approval and shared fleet | CFP, ACCEPT, REFUSE | Offers and task-state messages | Compares options and replans |
 | Repair Team / Hybrid | Offer, reserve, repair or report failure | Complete accepted tasks without conflicts | Position, task and reservation | PROPOSE, REFUSE, INFORM | CFP and ACCEPT | Reactive communication plus maintained task state |
 
-The Repair Team role has two instances; the system therefore has six visible agent instances and five roles. Pressure and usage checks have separate visible steps. Repairs run for a configurable number of steps. Completion moves the shared team's position to that incident, which affects later distance offers. A failed team stays unavailable until Reset.
+The Repair Team role has two instances; the system therefore has six visible agent instances and five roles. Pressure and usage checks have separate visible steps. Repairs run for a configurable number of steps. Completion moves the shared team's position to that incident, which affects later distance offers. A failed team stays unavailable for the rest of that run.
 
 ### 4.3 Environment classification
 
@@ -103,7 +103,7 @@ These properties classify the simulated environment. A real water network may be
 | Minimum reading interval | 2 simulation seconds | Controls when a new monitor conversation may start. |
 | Team positions | Two invented Riyadh starting positions | Determine distance proposals; positions persist after repairs. |
 | Reservation owner | Incident conversation ID or empty | Prevents overlapping assignments of a team. |
-| Failure / unavailable controls | Interface checkboxes | Test reassignment and unresolved incidents. |
+| Team availability / failure | Per-team interface checkboxes | Test reassignment and unavailable-team incidents. |
 | Task status | Agent/incident state | Records queued, approval-waiting, repair and completion states. |
 
 Severity is a pressure-based demonstration rule, not an estimate of actual leak volume. Haversine distance is straight-line distance, not road travel time. Thresholds are demonstration settings, not Saudi SCADA specifications.
@@ -130,31 +130,31 @@ The interface presents live agent activity first. The middle contains exactly th
 
 ### Scenario 1: Normal reading
 
-**Initial conditions:** Default limits, both teams available, first reading at row 1: pressure 64.97 PSI and flow 73.64 L/min. Its reference label is 0.
+**Initial conditions:** Manual input, default limits, both teams available, Zone_1/Block_1/Pipe_1, pressure 65 PSI and flow 80 L/min. No manual ground-truth label is provided.
 
 **Agents and events:** Pressure Monitor asks Usage Monitor to verify flow. Both readings are normal.
 
-**Expected and observed outcome:** No confirmed incident or repair dispatch is created for this reading. The monitor conversation ends, while Run can continue to the next row.
+**Expected and observed outcome:** No confirmed incident or repair dispatch is created for this reading. The monitor conversation ends. A single manual reading finishes the run; a user-provided sequence continues to its next reading.
 
 ![Normal reading](screenshots/normal.png)
 
 ### Scenario 2: Minor leak
 
-**Initial conditions:** Default limits, both teams available, first reading at row 36: pressure 47.79 PSI and flow 115.92 L/min. Its reference label is 1. Failure injection is disabled.
+**Initial conditions:** Manual input, default limits, both teams available, Zone_1/Block_1/Pipe_1, pressure 50 PSI and flow 110 L/min. Failure injection is disabled. No manual ground-truth label is provided.
 
 **Agents and events:** Pressure and usage agents confirm the incident. Locator identifies Zone_1/Block_1/Pipe_1. Dispatch requests offers from both shared teams and compares distances.
 
-**Expected and observed outcome:** At the initial fleet positions, Team A is closer, starts the repair and completes it. Its position changes to the incident location. This example is selected for demonstrating a labelled leak; reference labels are not used by the agents to make decisions.
+**Expected and observed outcome:** At the initial fleet positions, Team A is closer, starts the repair and completes it. Its position changes to the incident location. The agents infer the incident state from the entered readings; the user does not select a leak classification.
 
 ![Minor leak repaired](screenshots/minor.png)
 
 ### Scenario 3: Major leak with team failure
 
-**Initial conditions:** Default limits, first reading at row 567: pressure 39.62 PSI and flow 96.32 L/min. Its reference label is 1. Team A failure is enabled.
+**Initial conditions:** Manual input, default limits, Zone_1/Block_1/Pipe_1, pressure 35 PSI and flow 110 L/min. Team A failure is enabled. No manual ground-truth label is provided.
 
 **Agents and events:** Monitors confirm the incident. Dispatch waits for approval. Other zones continue receiving readings. After approval, the closest team, Team A, is assigned but reports failure. Dispatch requests new offers. Team A is unavailable and Team B can accept when free.
 
-**Expected and observed outcome:** Team B completes the repair. Team A remains failed until Reset. Rejecting the approval instead leaves this incident unresolved. Separate tests cover competing incidents and stale offers, verifying that the shared fleet is never double booked.
+**Expected and observed outcome:** Team B completes the repair. Team A remains failed for that run. Rejecting the approval instead leaves this incident unresolved. Separate tests cover competing incidents and stale offers, verifying that the shared fleet is never double booked.
 
 ![Failure and recovery](screenshots/failure.png)
 

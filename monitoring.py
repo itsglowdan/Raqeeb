@@ -23,7 +23,7 @@ def display_reading(reading):
 class ContinuousMonitor:
     def __init__(self, readings, start_index=0, interval=2.0, pressure_limit=54,
                  flow_limit=90, major_limit=40, repair_ticks=8, fail_first=False,
-                 unavailable=False):
+                 unavailable=False, team_a_available=True, team_b_available=True):
         if not readings or interval < 0.5:
             raise ValueError('Invalid monitoring settings')
         self.readings = readings
@@ -50,8 +50,8 @@ class ContinuousMonitor:
         self.total_duration_ms = 0.0
         self.open_incidents = {}
         self.fleet = {
-            'Team A': {'position': (24.7136, 46.6653), 'failed': False, 'enabled': not unavailable, 'owner': None},
-            'Team B': {'position': (24.7336, 46.7053), 'failed': False, 'enabled': not unavailable, 'owner': None},
+            'Team A': {'position': (24.7136, 46.6653), 'failed': False, 'enabled': not unavailable and team_a_available, 'owner': None},
+            'Team B': {'position': (24.7336, 46.7053), 'failed': False, 'enabled': not unavailable and team_b_available, 'owner': None},
         }
         self.regions = {zone: {'latest': None, 'classification': 'No readings', 'active': None,
                                'pending': deque(), 'last_sim': None, 'last_monitor': None,
