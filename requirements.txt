@@ -1,1 +1,2 @@
-# No external packages are needed for the data loader.
+streamlit==1.67.0
+pandas==2.2.3
