@@ -1,91 +1,74 @@
 # Model design
 
-## Flow
+## Agent flow
 
-Pressure Monitor → Usage Monitor → Pressure Monitor → Leak Locator → Dispatch → Repair Teams
+Pressure Monitor ↔ Usage Monitor → Leak Locator → Dispatch → Repair Teams
 
-The pressure agent asks the usage agent to check flow for the same reading. Only low pressure AND high flow confirm a leak. The locator sends the reading coordinates and network identifiers to dispatch. Major leaks wait for a supervisor. Dispatch asks both teams for offers and accepts the closest available team's offer. A team failure starts a new offer round. Repairs finish after a configurable number of steps.
+Five agent roles cooperate through an in-memory ACL-like message queue. Each city has two local Repair Team instances. Team positions and failures persist between incidents. The simulator is local and sequential; cities have independent incident queues.
 
-There are five agent roles. Each city has two instances of the Repair Team role. Each reading has an in-memory agent message queue. ContinuousMonitor completes the three pressure/usage check messages on arrival. A confirmed incident joins its city queue. Each city advances one active incident by one message per simulation tick; cities progress independently. Each city owns two persistent team states, which are restored when a new incident starts. This is a local simulation, not a distributed service. Trace durations measure actual execution time and vary by machine.
+Each reading is checked in three visible steps: pressure request, flow check, joint confirmation. Confirmed incidents enter their city queue. Each city advances one incident workflow per tick while other cities continue. A major leak waits for approval. If a team fails, dispatch asks for new offers. Repeated alerts for an open pipe are merged.
 
 ## Agents and PEAS
 
 | Agent / type | Performance | Environment | Actuators | Sensors | Reason |
 | --- | --- | --- | --- | --- | --- |
-| Pressure Monitor / Reactive | Correct pressure alerts and joint confirmations | Current network reading | REQUEST flow check; REQUEST location | Pressure and flow-check reply | Uses threshold rules |
-| Usage Monitor / Reactive | Correct high-flow checks | Current network reading | INFORM pressure agent | Flow and pressure agent request | Responds to the current reading |
-| Leak Locator / Reactive | Correct incident identifiers and coordinates | Network identifiers and reading position | REQUEST dispatch | Confirmed incident | Reads known location fields |
-| Dispatch / Deliberative | Assign closest available team without bypassing approval | Incident, approval, team offers | CFP, ACCEPT, REFUSE | Offers, failure/completion messages, supervisor decision | Compares alternatives and replans after failure |
-| Repair Team / Hybrid | Complete accepted repairs; report inability | Simulated team position, availability and task | PROPOSE, REFUSE, INFORM | CFP and ACCEPT | Reacts to offers and maintains a multi-step repair task |
+| Pressure Monitor / Reactive | Correct alerts and joint confirmation | Current reading | REQUEST flow check and location | Pressure and flow reply | Threshold rules |
+| Usage Monitor / Reactive | Correct flow checks | Current reading | INFORM pressure agent | Flow and pressure request | Responds to current values |
+| Leak Locator / Reactive | Correct incident location | Pipe identifiers and virtual position | REQUEST dispatch | Confirmed reading | Uses known fields |
+| Dispatch / Deliberative | Closest available team; approval respected | Incident and team offers | CFP, ACCEPT, REFUSE | Offers, failures, completion and approval | Compares offers and replans |
+| Repair Team / Hybrid | Complete repairs and report inability | Team position, availability and task | PROPOSE, REFUSE, INFORM | CFP and ACCEPT | Reacts to offers and maintains repair state |
 
 ## Environment
 
-The simulator is accessible: all simulated readings and states are available to the program. It is deterministic: the same reading, controls and approval actions give the same result. It is dynamic during execution: task states and availability change each step. Scheduling and messages are discrete, while pressure, flow and coordinates are continuous-valued. Real water networks may instead be partially observable and stochastic.
+The simulator is accessible because its input and state are available to the program. Decisions are deterministic for the same inputs and approval actions. Execution-time measurements vary by machine. The environment changes during execution. Scheduling and messages are discrete, while sensor values and positions are continuous-valued. The CSV order is not actual historical sensor time.
 
-Run continuously replays dataset rows, wrapping at the end, until Pause. One tick represents 0.5 simulated seconds; the adjustable arrival interval defaults to 2 simulation seconds. Dataset order does not represent real sensor history. No real pressure-drop rate is inferred. The original CSV stays intact; only displayed coordinates are mapped to fixed virtual Saudi locations. A scenario sets the first row; later rows continue normally. Pause freezes the whole simulated clock. Next step advances one tick. Monitoring depends on an open browser session.
+Run processes the selected starting row through the final row once, without wrapping. Pause freezes the clock and resumes at the same point. Each tick represents 0.5 simulation seconds. At most one sensor-reading conversation is checked at a time, taking three ticks; the selected reading interval is a minimum interval. City incident workflows advance alongside it. After the final reading, runnable repair work drains before stopping. Approval waits do not force an endless loop; their controls remain available and can resume pending work after scanning finishes.
 
-## Parameters
+## Variables
 
-| Parameter | Default | Effect |
+| Variable | Default | Effect |
 | --- | --- | --- |
-| Pressure limit | 54 PSI | Pressure strictly below this value is abnormal |
-| Flow limit | 90 L/min | Flow strictly above this value is abnormal |
-| Major pressure limit | 40 PSI | A confirmed leak at or below this pressure needs approval |
-| Repair duration | 8 steps | Duration after task acceptance; not physical travel time |
-| Team A failure | Off, except failure example | First team fails after acceptance |
-| Both teams unavailable | Off | Tests unresolved incidents when no team can respond |
+| Pressure limit | 54 PSI | Strictly lower pressure is abnormal |
+| Flow limit | 90 L/min | Strictly higher flow is abnormal |
+| Major pressure limit | 40 PSI | Confirmed leaks at or below this value require approval |
+| Repair duration | 8 steps | Duration after task acceptance |
+| Minimum reading interval | 2 seconds | Minimum time between starting readings |
+| Team A failure | Off except failure scenario | Fails when assigned |
+| Both teams unavailable | Off | Leaves incidents unresolved |
 
-Limits are demonstration settings, not Saudi SCADA specifications or calibrated safety thresholds. They were chosen after inspecting this synthetic dataset; reported metrics are descriptive and not independent validation. Severity is a simple pressure-based simulation rule, not measured leak volume.
-
-The five Zones are mapped to Riyadh, Madinah, Abha, Makkah and Dammam. Each city has two teams, starting 0.002 and 0.04 degrees north of its city center. Pipe display positions use city latitude + (block number − 3) × 0.012 and longitude + (pipe number − 3) × 0.012 degrees. These are invented positions for comparison, not extra sensor readings. Team positions and failures persist across that city’s incidents until Reset. Distance uses the haversine formula on coordinates, not road routes. A completed simulated repair moves the team to the incident position without changing the source dataset.
+Zone_1 maps to Riyadh, Zone_2 to Madinah, Zone_3 to Abha, Zone_4 to Makkah and Zone_5 to Dammam. For display, latitude = city latitude + (block number − 3) × 0.012, longitude = city longitude + (pipe number − 3) × 0.012 degrees. Original CSV coordinates and sensor values stay unchanged. Teams start 0.002 and 0.04 degrees north of the city center. Haversine distance selects the closest available team. This is not road routing or measured leak severity.
 
 ## Communication
 
-Messages have `sender`, `receiver`, `performative`, `content`, `ontology`, `conversation_id`, `step` and `delivered`. The ontology is `water-leak`. Each observed reading gets a unique conversation (`reading-1`, `reading-2`, etc.) within the monitoring session. Messages also identify the city, original dataset row, replay cycle and simulated time. Repeated alerts for an open pipe cancel the duplicate location request and merge into the existing incident; these requests are marked `cancelled`. The log includes both queued and delivered messages; `delivered` distinguishes them.
+Messages contain sender, receiver, performative, content, ontology, conversation ID, step, city, original row and simulation time. Each reading has a unique conversation ID. Delivered and cancelled flags distinguish processed messages from queued or merged duplicate requests.
 
-| Initiator → responder | Performative | Example content | Expected response |
-| --- | --- | --- | --- |
-| Pressure Monitor → Usage Monitor | REQUEST | reading and pressure_low=true | INFORM with flow_high |
-| Usage Monitor → Pressure Monitor | INFORM | flow_high=true | Confirm only if pressure is also low |
-| Pressure Monitor → Leak Locator | REQUEST | Same sensor reading | Locate the incident |
-| Leak Locator → Dispatch | REQUEST | area, latitude, longitude, major | Approval wait or team search |
-| Supervisor → Dispatch | ACCEPT / REFUSE | Empty content; current incident | Start offers or leave unresolved |
-| Dispatch → each team | CFP | Incident location | PROPOSE distance or REFUSE reason |
-| Team → Dispatch | PROPOSE | distance_km=0.22 | Compare all responses |
-| Dispatch → selected team | ACCEPT | Incident location | Repair or report failure |
-| Dispatch → other offering team | REFUSE | A closer team was selected | Return to available |
-| Team → Dispatch | INFORM | state=failed / completed | Reassign / mark completed |
+| Sender → receiver | Performative | Content / outcome |
+| --- | --- | --- |
+| Pressure → Usage | REQUEST | Reading and low-pressure result |
+| Usage → Pressure | INFORM | High-flow result; confirm only if both are abnormal |
+| Pressure → Locator | REQUEST | Confirmed reading |
+| Locator → Dispatch | REQUEST | Area, coordinates and major flag |
+| Supervisor → Dispatch | ACCEPT / REFUSE | Proceed or leave unresolved |
+| Dispatch → teams | CFP | Incident position |
+| Team → Dispatch | PROPOSE / REFUSE | Distance offer or unavailability |
+| Dispatch → selected team | ACCEPT | Start repair |
+| Dispatch → other team | REFUSE | Closer team selected |
+| Team → Dispatch | INFORM | Accepted, failed or completed |
 
-## Three demonstration scenarios
+Local traces measure actual Python execution duration, excluding UI delays and approval waits. Team failures are distinct from execution errors. Global counters and charts track incidents, repairs, messages, failures and errors. Pressure and flow charts use simulated arrival times and show detection limits. Reference labels are used only for evaluation.
 
-Use default settings for these examples. Every reading is selected from the retained Kaggle data, without changing its pressure or flow.
+## Scenarios
 
-1. **Normal:** row 1. Both readings are normal. Pressure and usage agents exchange a request/reply. No dispatch occurs.
-2. **Minor leak:** row 29. Pressure is below 54 PSI and flow is above 90 L/min; pressure is above 40 PSI. All five roles participate. The closest available local team is selected and completes the repair; all cities keep receiving readings. The winner depends on the fixed virtual pipe position and persistent team locations.
-3. **Major leak + team failure:** row 567. Pressure is at or below 40 PSI and flow is above 90 L/min. The affected city waits for approval while other cities continue monitoring. After approval, the nearest available local team is selected. With Team A failure enabled, Team A fails when assigned; dispatch asks for new offers and Team B completes the repair. If Team B is initially closer, Team A has not yet been assigned and its failure is not triggered. Rejecting approval leaves that incident unresolved. The standalone deterministic agent test also verifies the exact Team A → Team B recovery sequence.
+1. Normal: row 1. The monitors exchange checks without dispatching a team.
+2. Minor leak: row 29. Pressure and flow confirm a leak; the nearest available local team repairs it automatically.
+3. Major leak and team failure: row 567. The affected incident waits for approval while other readings continue. With Team A failure enabled, assignment to Team A produces a failure and another offer round; Team B completes the task. Rejecting approval leaves the incident unresolved. The nearest team can change as positions persist.
 
-The automated tests also cover a single abnormal sensor, unavailable teams, changed thresholds and threshold boundaries. Screenshots in `screenshots/` show executed examples.
+## Interface
 
-## Execution screenshots
+The agent panel is first, showing actual per-role activity, city, status, and delivered messages. City cards are below it. Selecting a city filters its sensor charts and map. Additional tabs show performance, messages, incidents and evaluation. Activity highlighting follows actual calls, stops while paused, and supports reduced-motion preferences.
 
-- [Normal reading](screenshots/normal.png)
-- [Minor leak repaired](screenshots/minor_leak.png)
-- [Major leak awaiting approval](screenshots/major_approval.png)
-- [Repair completed after team failure](screenshots/failure_recovery.png)
+## Screenshots
 
-## Continuous monitoring and graphs
-
-Cities display their latest sensor classification and any open task separately. A later normal reading does not clear an unresolved incident. Duplicate open pipe alerts are merged; new pipes queue behind that city's task. One city waiting for approval does not block the other four.
-
-Pressure and flow plots use simulated arrival times with threshold rules. Global plots show incidents versus completions, cumulative messages/failures/errors, and estimated cumulative maintenance cost. Traces plot actual mean execution duration per agent against simulated time. Timing uses `perf_counter`, so it excludes the UI delay and supervisor wait.
-
-Cost defaults to 250 SAR per actual repair start plus 5 SAR per straight-line kilometre. These assumptions are editable. The charge is recorded once per accepted-and-started task; failures before repair start are not charged. LLM/API cost is zero. Lab 9 is a reference for local tracing/monitoring presentation, not a requirement to use LangSmith or add LLM agents.
-
-Histories are bounded to keep continuous sessions manageable: 600 observations and monitoring samples, 1,500 messages and traces, and 500 recent incidents plus open incidents. Full-session counters persist. Failed teams stay failed until Reset. There is no automatic retry for a rejected or unserviceable incident; it stays open and visible.
-
-## Dashboard views
-
-- [Pressure and flow trends](screenshots/sensor_trends.png)
-- [Execution monitoring](screenshots/performance.png)
-- [Estimated maintenance cost](screenshots/maintenance_cost.png)
-- [Virtual Saudi incident map](screenshots/saudi_map.png)
+- [Live agents](screenshots/agents.png)
+- [Kingdom overview](screenshots/overview.png)
+- [Monitoring](screenshots/monitoring.png)

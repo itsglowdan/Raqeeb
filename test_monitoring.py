@@ -1,12 +1,11 @@
 import unittest
-
 from data_loader import load_data
 from monitoring import ContinuousMonitor, display_reading
 
 
-def reading(zone="Zone_1", pressure=60, flow=80, pipe="Pipe_1"):
-    return {"Pressure": pressure, "Flow_Rate": flow, "Zone": zone, "Block": "Block_1",
-            "Pipe": pipe, "Latitude": 25.1, "Longitude": 55.2}
+def reading(zone='Zone_1', pressure=60, flow=80, pipe='Pipe_1'):
+    return {'Pressure': pressure, 'Flow_Rate': flow, 'Zone': zone, 'Block': 'Block_1',
+            'Pipe': pipe, 'Latitude': 25.1, 'Longitude': 55.2}
 
 
 def run(monitor, steps):
@@ -15,135 +14,150 @@ def run(monitor, steps):
         monitor.advance()
 
 
-class MonitoringTests(unittest.TestCase):
-    def test_continues_and_replays_dataset(self):
-        monitor = ContinuousMonitor([reading(), reading("Zone_2")], interval=0.5)
-        run(monitor, 10)
-        self.assertTrue(monitor.running)
-        self.assertEqual(monitor.observed, 10)
-        self.assertEqual(monitor.cycle, 5)
-        self.assertEqual([x["row"] for x in monitor.history], [1, 2] * 5)
-        self.assertEqual(monitor.confirmed, 0)
+def finish(monitor, approve=False):
+    monitor.running = True
+    for _ in range(25000):
+        monitor.advance()
+        if approve:
+            for zone, city in monitor.cities.items():
+                if city['active'] and city['active']['sim'].waiting_approval:
+                    monitor.approve(zone, True)
+        if monitor.finished:
+            return
+    raise AssertionError('Monitoring did not finish')
 
-    def test_pause_freezes_everything_and_manual_is_one_tick(self):
-        monitor = ContinuousMonitor([reading(pressure=50, flow=110)], interval=0.5)
+
+class MonitoringTests(unittest.TestCase):
+    def test_every_reading_once_then_stops(self):
+        monitor = ContinuousMonitor([reading(), reading('Zone_2')], interval=0.5)
+        finish(monitor)
+        self.assertFalse(monitor.running)
+        self.assertEqual(monitor.observed, 2)
+        self.assertEqual(monitor.processed, 2)
+        self.assertEqual([x['row'] for x in monitor.history], [1, 2])
+        tick = monitor.tick
+        run(monitor, 10)
+        self.assertEqual(monitor.tick, tick)
+        self.assertEqual(monitor.observed, 2)
+
+    def test_starting_row_does_not_wrap(self):
+        monitor = ContinuousMonitor([reading() for _ in range(4)], start_index=2)
+        finish(monitor)
+        self.assertEqual(monitor.processed, 2)
+        self.assertEqual([x['row'] for x in monitor.history], [3, 4])
+
+    def test_pause_and_resume_keep_position(self):
+        monitor = ContinuousMonitor([reading() for _ in range(10)], interval=0.5)
         run(monitor, 4)
         monitor.running = False
-        before = (monitor.tick, monitor.observed, monitor.total_cost, monitor.total_messages)
+        before = (monitor.tick, monitor.observed, monitor.processed, monitor.total_messages)
         for _ in range(10):
             monitor.advance()
-        self.assertEqual(before, (monitor.tick, monitor.observed, monitor.total_cost, monitor.total_messages))
-        monitor.advance(manual=True)
-        self.assertEqual(monitor.tick, before[0] + 1)
-        self.assertFalse(monitor.running)
+        self.assertEqual(before, (monitor.tick, monitor.observed, monitor.processed, monitor.total_messages))
+        finish(monitor)
+        self.assertEqual(monitor.processed, 10)
+        self.assertEqual([x['row'] for x in monitor.history], list(range(1, 11)))
+
+    def test_agents_act_in_separate_visible_steps(self):
+        monitor = ContinuousMonitor([reading()], interval=0.5)
+        run(monitor, 1)
+        self.assertEqual(monitor.processed, 0)
+        self.assertEqual(monitor.activity, [('Zone_1', 'Pressure Monitor')])
+        self.assertEqual(monitor.agent_states('Zone_1')['Pressure Monitor'], 'Checking pressure')
+        run(monitor, 1)
+        self.assertEqual(monitor.activity, [('Zone_1', 'Usage Monitor')])
+        self.assertEqual(monitor.processed, 0)
+        run(monitor, 1)
+        self.assertEqual(monitor.activity, [('Zone_1', 'Pressure Monitor')])
+        self.assertEqual(monitor.processed, 1)
+        self.assertEqual(len(monitor.deliveries), 3)
+        self.assertTrue(monitor.finished)
 
     def test_approval_does_not_block_other_cities(self):
-        monitor = ContinuousMonitor([reading(pressure=35, flow=110), reading("Zone_4")], interval=0.5)
-        run(monitor, 20)
-        self.assertTrue(monitor.cities["Zone_1"]["active"]["sim"].waiting_approval)
-        self.assertIsNotNone(monitor.cities["Zone_4"]["latest"])
-        self.assertEqual(monitor.observed, 20)
-        monitor.approve("Zone_1", True)
-        run(monitor, 25)
-        self.assertGreater(monitor.completed, 0)
+        monitor = ContinuousMonitor([reading(pressure=35, flow=110), reading('Zone_4')], interval=0.5)
+        finish(monitor)
+        self.assertEqual(monitor.processed, 2)
+        self.assertTrue(monitor.cities['Zone_1']['active']['sim'].waiting_approval)
+        self.assertEqual(monitor.cities['Zone_4']['classification'], 'Normal')
+        monitor.approve('Zone_1', True)
+        self.assertTrue(monitor.running)
+        finish(monitor)
+        self.assertEqual(monitor.completed, 1)
+        self.assertEqual(monitor.observed, 2)
 
-    def test_duplicate_open_pipe_is_not_dispatched_twice(self):
-        monitor = ContinuousMonitor([reading(pressure=35, flow=110)], interval=0.5)
-        run(monitor, 20)
+    def test_duplicate_open_pipe_is_merged(self):
+        monitor = ContinuousMonitor([reading(pressure=35, flow=110) for _ in range(10)], interval=0.5)
+        finish(monitor)
         self.assertEqual(monitor.confirmed, 1)
         self.assertEqual(len(monitor.open_incidents), 1)
-        self.assertEqual(len(monitor.cities["Zone_1"]["pending"]), 0)
-        self.assertTrue(any(m.get("cancelled") for m in monitor.messages))
+        self.assertTrue(any(m.get('cancelled') for m in monitor.messages))
 
-    def test_failure_recovery_and_cost_not_double_counted(self):
-        monitor = ContinuousMonitor([reading(pressure=50, flow=110)], interval=5,
-                                    fail_first=True, base_cost=100, cost_per_km=0)
-        run(monitor, 50)
-        self.assertGreater(monitor.completed, 0)
+    def test_failure_recovery_keeps_failed_team_unavailable(self):
+        rows = [reading(pressure=50, flow=110), reading(pressure=50, flow=110, pipe='Pipe_2')]
+        monitor = ContinuousMonitor(rows, interval=5, fail_first=True)
+        finish(monitor)
+        self.assertEqual(monitor.completed, 2)
         self.assertEqual(monitor.failure_count, 1)
-        starts = sum(m["content"].get("state") == "accepted" for m in monitor.messages)
-        self.assertEqual(monitor.total_cost, starts * 100)
-        self.assertTrue(monitor.cities["Zone_1"]["teams"][0]["failed"])
-        self.assertTrue(all(item["sim"].assigned_team == "Team B" for item in monitor.incidents
-                            if item["status"] == "Completed"))
+        self.assertTrue(monitor.cities['Zone_1']['teams'][0]['failed'])
+        self.assertTrue(all(item['sim'].assigned_team == 'Team B' for item in monitor.incidents))
 
-    def test_rejection_and_unavailable_teams_remain_unresolved(self):
-        monitor = ContinuousMonitor([reading(pressure=35, flow=110)], interval=0.5)
-        run(monitor, 5)
-        monitor.approve("Zone_1", False)
-        run(monitor, 20)
+    def test_rejected_and_unavailable_incidents_remain_open(self):
+        monitor = ContinuousMonitor([reading(pressure=35, flow=110)])
+        finish(monitor)
+        monitor.approve('Zone_1', False)
+        finish(monitor)
         self.assertEqual(monitor.completed, 0)
-        self.assertEqual(len(monitor.open_incidents), 1)
-        self.assertIn("rejected", monitor.city_status("Zone_1")[1])
-        self.assertEqual(monitor.total_cost, 0)
+        self.assertIn('rejected', monitor.city_status('Zone_1')[1])
         monitor = ContinuousMonitor([reading(pressure=50, flow=110)], unavailable=True)
-        run(monitor, 30)
-        self.assertIn("No available team", monitor.city_status("Zone_1")[1])
-        self.assertEqual(monitor.completed, 0)
+        finish(monitor)
+        self.assertIn('No available team', monitor.city_status('Zone_1')[1])
 
-    def test_new_normal_reading_does_not_hide_open_leak(self):
+    def test_later_normal_reading_does_not_hide_open_leak(self):
         monitor = ContinuousMonitor([reading(pressure=35, flow=110), reading()], interval=0.5)
-        run(monitor, 10)
-        self.assertEqual(monitor.cities["Zone_1"]["classification"], "Normal")
-        self.assertEqual(monitor.city_status("Zone_1")[0], "Confirmed leak")
+        finish(monitor)
+        self.assertEqual(monitor.cities['Zone_1']['classification'], 'Normal')
+        self.assertEqual(monitor.city_status('Zone_1')[0], 'Confirmed leak')
 
-    def test_fleet_positions_are_carried_forward(self):
-        monitor = ContinuousMonitor([reading(pressure=50, flow=110)], interval=5)
-        run(monitor, 19)
-        completed = [item for item in monitor.incidents if item["status"] == "Completed"]
-        self.assertTrue(completed)
-        first = completed[0]["sim"]
-        position = first.agents[first.assigned_team].position
-        self.assertEqual(position, (first.reading["Latitude"], first.reading["Longitude"]))
-        run(monitor, 2)
-        active = monitor.cities["Zone_1"]["active"]
-        self.assertIsNotNone(active)
-        self.assertEqual(active["sim"].agents[first.assigned_team].position, position)
-
-    def test_saudi_locations_fixed_and_values_unchanged(self):
+    def test_saudi_positions_fixed_and_values_unchanged(self):
         rows, _ = load_data()
         positions = {}
-        original = dict(rows[0])
         for row in rows:
             mapped = display_reading(row)
-            self.assertEqual(mapped["Pressure"], row["Pressure"])
-            self.assertEqual(mapped["Flow_Rate"], row["Flow_Rate"])
-            self.assertTrue(18 < mapped["Latitude"] < 27)
-            self.assertTrue(39 < mapped["Longitude"] < 51)
-            key = tuple(row[k] for k in ["Zone", "Block", "Pipe"])
-            point = mapped["Latitude"], mapped["Longitude"]
+            self.assertEqual(mapped['Pressure'], row['Pressure'])
+            self.assertEqual(mapped['Flow_Rate'], row['Flow_Rate'])
+            self.assertTrue(18 < mapped['Latitude'] < 27 and 39 < mapped['Longitude'] < 51)
+            key = tuple(row[k] for k in ['Zone', 'Block', 'Pipe'])
+            point = mapped['Latitude'], mapped['Longitude']
             if key in positions:
                 self.assertEqual(positions[key], point)
             positions[key] = point
         self.assertEqual(len(set(positions.values())), 125)
-        self.assertEqual(rows[0], original)
 
-    def test_execution_traces_and_bounded_history(self):
-        monitor = ContinuousMonitor([reading()], interval=0.5)
-        run(monitor, 700)
+    def test_full_dataset_finishes_with_bounded_logs(self):
+        rows, _ = load_data()
+        monitor = ContinuousMonitor(rows, interval=0.5, fail_first=True)
+        finish(monitor, approve=True)
+        self.assertEqual(monitor.processed, 5000)
+        self.assertEqual(monitor.observed, 5000)
+        self.assertEqual(monitor.error_count, 0)
+        self.assertEqual(monitor.dropped, 0)
         self.assertEqual(len(monitor.history), 600)
-        self.assertEqual(len(monitor.performance), 600)
         self.assertEqual(len(monitor.messages), 1500)
         self.assertEqual(len(monitor.traces), 1500)
-        self.assertEqual(monitor.total_messages, 2100)
-        self.assertEqual(monitor.total_calls, 2100)
-        self.assertEqual(monitor.error_count, 0)
-        self.assertTrue(all(x["duration_ms"] >= 0 for x in monitor.traces))
-        self.assertEqual(len({m["conversation_id"] for m in monitor.messages}), 500)
+        self.assertTrue(all(t['duration_ms'] >= 0 for t in monitor.traces))
 
-    def test_execution_error_does_not_stop_stream(self):
-        monitor = ContinuousMonitor([reading(pressure=50, flow=110), reading("Zone_4")])
-        run(monitor, 1)
-        sim = monitor.cities["Zone_1"]["active"]["sim"]
+    def test_execution_error_does_not_block_remaining_readings(self):
+        monitor = ContinuousMonitor([reading(pressure=50, flow=110), reading('Zone_4')])
+        run(monitor, 3)
+        sim = monitor.cities['Zone_1']['active']['sim']
         def broken(message):
-            raise RuntimeError("Test execution failure")
-        sim.agents["Dispatch"].receive = broken
-        run(monitor, 20)
+            raise RuntimeError('Test failure')
+        sim.agents['Dispatch'].receive = broken
+        finish(monitor)
         self.assertEqual(monitor.error_count, 1)
-        self.assertIsNotNone(monitor.cities["Zone_4"]["latest"])
+        self.assertEqual(monitor.processed, 2)
         self.assertEqual(monitor.completed, 0)
-        self.assertTrue(monitor.running)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

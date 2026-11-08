@@ -44,31 +44,31 @@ with st.sidebar:
     source = st.radio("Reading source", ["Dataset", "Scenarios"])
     scenario = st.selectbox("Scenario", ["Normal", "Minor leak", "Major leak + team failure"],
                             disabled=source != "Scenarios")
-    row_number = st.number_input("Starting dataset row", 1, len(readings), 1, disabled=source != "Dataset")
-    interval = st.slider("New reading every (simulation seconds)", 0.5, 5.0, 2.0, 0.5)
-    st.caption("Scenarios select the first reading; the stream then continues. At the end, the dataset repeats.")
+    if source == "Dataset":
+        row_number = st.number_input("Starting dataset row", 1, len(readings), 1)
+    else:
+        row_number = scenario_reading(readings, scenario)[0] + 1
+        st.caption(f"Starting dataset row: {row_number}")
+    interval = st.slider("Minimum reading interval (seconds)", 0.5, 5.0, 2.0, 0.5)
+    st.caption("Starts at the selected row and stops at the last reading.")
     with st.expander("2 · Detection limits", expanded=False):
         pressure_limit = st.slider("Low pressure below (PSI)", 30, 70, 54)
         flow_limit = st.slider("High flow above (L/min)", 50, 120, 90)
         major_limit = st.slider("Major leak pressure at or below (PSI)", 20, pressure_limit - 1,
                                 min(40, pressure_limit - 1))
         repair_ticks = st.slider("Repair duration (steps)", 3, 20, 8)
-        st.caption("Scenario examples use the default limits. Changed limits can change their outcome.")
     with st.expander("3 · Team conditions", expanded=False):
         fail_first = st.checkbox("Fail Team A after assignment", value=scenario == "Major leak + team failure")
         unavailable = st.checkbox("Both teams unavailable")
         st.caption("Each city has two local teams. Failed teams remain unavailable until Reset.")
-    with st.expander("4 · Estimated maintenance cost", expanded=False):
-        base_cost = st.number_input("Repair start cost (SAR)", min_value=0.0, value=250.0, step=25.0)
-        cost_per_km = st.number_input("Distance cost (SAR/km)", min_value=0.0, value=5.0, step=1.0)
-        st.caption("Illustrative assumptions only. Charged once when a team starts a repair; no LLM/API charges.")
     if st.button("Load / Reset", width="stretch", type="primary") or "monitor" not in st.session_state:
         index = scenario_reading(readings, scenario)[0] if source == "Scenarios" else int(row_number) - 1
         st.session_state.monitor = ContinuousMonitor(
             readings, index, interval, pressure_limit, flow_limit, major_limit,
-            repair_ticks, fail_first, unavailable, base_cost, cost_per_km)
+            repair_ticks, fail_first, unavailable)
         st.session_state.focus_city = readings[index]["Zone"]
-    st.info("Change settings, then press Load / Reset to apply them. Reset clears this session's history.")
+        st.session_state.follow_live = False
+    st.caption("Apply changes with Load / Reset.")
 
 
 def trend(data, x, columns, y_title):
@@ -76,7 +76,7 @@ def trend(data, x, columns, y_title):
     melted = frame.melt(id_vars=[x], value_vars=columns, var_name="Series", value_name="Value")
     melted["Series"] = melted["Series"].replace({
         "confirmed": "Confirmed incidents", "completed": "Completed repairs",
-        "cost_sar": "Estimated cost", "messages": "Messages sent",
+        "messages": "Messages sent",
         "failures": "Team failures", "errors": "Execution errors",
     })
     return alt.Chart(melted).mark_line(point=True).encode(
@@ -91,7 +91,7 @@ def sensor_chart(frame, field, title, limit):
     chart = alt.Chart(frame).mark_line(point=True, color="#1466C3").encode(
         x=alt.X("seconds:Q", title="Simulation time (seconds)"),
         y=alt.Y(f"{field}:Q", title=title, scale=alt.Scale(zero=False)),
-        tooltip=["seconds:Q", "row:Q", "cycle:Q", alt.Tooltip(f"{field}:Q", format=".2f")],
+        tooltip=["seconds:Q", "row:Q", alt.Tooltip(f"{field}:Q", format=".2f")],
     )
     rule = alt.Chart(pd.DataFrame({"limit": [limit]})).mark_rule(
         color="#DC6A50", strokeDash=[6, 4]).encode(y="limit:Q", tooltip=["limit:Q"])
@@ -100,7 +100,7 @@ def sensor_chart(frame, field, title, limit):
 
 def city_cards(monitor):
     st.subheader("Kingdom overview")
-    st.caption("Five virtual city networks · Latest observed readings, not real city conditions · Select a city for details")
+    st.caption("Virtual city networks")
     zones = list(CITIES)
     for group in (zones[:3], zones[3:]):
         columns = st.columns(len(group))
@@ -121,43 +121,73 @@ def city_cards(monitor):
                  <div><small>Flow · L/min</small><strong>{flow}</strong></div></div>
                  <p>Latest reading: {escape(latest_status)}</p><div class="city-task">{escape(task)}</div>
                  </div>''', unsafe_allow_html=True)
-                if st.button(f"View {CITIES[zone]['name']}", key=f"view_{zone}", width="stretch"):
-                    st.session_state.focus_city = zone
-    st.caption("Green: normal · Amber: one abnormal sensor · Red: open confirmed leak or latest confirmed reading · Grey: no reading yet")
+                st.button(f"View {CITIES[zone]['name']}", key=f"view_{zone}", width="stretch",
+                          on_click=select_city, args=(zone,))
+    st.caption("Normal · Suspected · Confirmed leak")
+
+
+def select_city(zone):
+    st.session_state.focus_city = zone
+    st.session_state.follow_live = False
+
+
+def pin_city():
+    st.session_state.follow_live = False
+
+
+def live_agents(monitor):
+    states = monitor.agent_states(monitor.focus_zone)
+    active = {name for _, name in monitor.activity} if monitor.running else set()
+    flow = []
+    for name in ("Pressure Monitor", "Usage Monitor", "Leak Locator", "Dispatch", "Repair Teams"):
+        working = name in active or (name == "Repair Teams" and bool(active & {"Team A", "Team B"}))
+        flow.append(f'<span class="flow-node {"working" if working else ""}">{name}</span>')
+    flow[0] += '<span class="flow-arrow"> ↔ </span>' + flow.pop(1)
+    st.markdown('<div class="agent-flow">' + '<span class="flow-arrow">→</span>'.join(flow) + '</div>', unsafe_allow_html=True)
+    names = list(states)
+    for group in (names[:3], names[3:]):
+        for column, name in zip(st.columns(3), group):
+            working = name in active
+            snapshot = monitor.role_states.get(name, {})
+            status = snapshot.get("status", states[name])
+            location = snapshot.get("city", "")
+            with column:
+                st.markdown(f'<div class="agent-card {"working" if working else ""}">'
+                            f'<div class="agent-card-title"><span class="agent-dot"></span><strong>{name}</strong></div>'
+                            f'<div class="agent-state">{escape(status)}</div>'
+                            f'<small>{"Active now" if working else "Paused" if not monitor.running and monitor.observed else "Standing by"} · {location}</small></div>', unsafe_allow_html=True)
+    recent = list(monitor.deliveries)[-3:]
+    if recent:
+        lines = [f'<div class="live-message"><strong>{escape(m["sender"])}</strong> → '
+                 f'<strong>{escape(m["receiver"])}</strong><span>{escape(m["city"])} · {escape(m["performative"])}</span></div>' for m in reversed(recent)]
+        st.markdown('<div class="live-messages">' + ''.join(lines) + '</div>', unsafe_allow_html=True)
 
 
 @st.fragment(run_every=0.5)
 def dashboard():
     monitor = st.session_state.monitor
-    st.subheader("Simulation controls")
-    run, pause, step = st.columns(3)
-    manual = False
-    if run.button("Run", width="stretch", type="primary"):
+    run, pause = st.columns(2)
+    if run.button("Run", width="stretch", type="primary", disabled=monitor.finished):
         monitor.running = True
     if pause.button("Pause", width="stretch"):
         monitor.running = False
-    if step.button("Next step", width="stretch"):
-        monitor.running = False
-        manual = True
-    monitor.advance(manual=manual)
-    result = "Monitoring continuously" if monitor.running else "Paused" if monitor.observed else "Ready"
-    st.markdown(f'<div class="raqeeb-status"><small>Current result</small><h3>{result}</h3></div>', unsafe_allow_html=True)
-    st.caption(f"Simulation time: {monitor.seconds:.1f}s · Dataset cycle: {monitor.cycle} · "
-               f"Pressure < {monitor.settings['pressure_limit']} PSI AND flow > {monitor.settings['flow_limit']} L/min · "
-               f"Major pressure ≤ {monitor.settings['major_limit']} PSI. Run continues until Pause.")
-    cards = st.columns(4)
-    cards[0].metric("Readings observed", monitor.observed)
-    cards[1].metric("Open incidents", len(monitor.open_incidents))
-    cards[2].metric("Repairs completed", monitor.completed)
-    cards[3].metric("Estimated cost (SAR)", f"{monitor.total_cost:,.2f}")
+    monitor.advance()
+    result = "All readings processed" if monitor.finished else "Running" if monitor.running else "Paused" if monitor.observed else "Ready"
+    st.markdown(f'<div class="raqeeb-status"><h3>{result}</h3></div>', unsafe_allow_html=True)
+    st.progress(monitor.processed / monitor.total_readings, text=f"Readings processed: {monitor.processed:,} / {monitor.total_readings:,}")
+    a, b, c = st.columns(3)
+    a.metric("Readings read", monitor.observed)
+    b.metric("Open incidents", len(monitor.open_incidents))
+    c.metric("Repairs completed", monitor.completed)
     if monitor.dropped:
-        st.warning(f"Queue capacity exceeded: {monitor.dropped} new incidents were not admitted.")
+        st.warning(f"Queue full: {monitor.dropped} incidents not admitted.")
 
-    city_cards(monitor)
+    st.subheader("Live agents")
+    live_agents(monitor)
     for zone, city in monitor.cities.items():
         incident = city["active"]
         if incident and incident["sim"].waiting_approval:
-            st.warning(f"{CITIES[zone]['name']}: major leak at {incident['sim'].location['area']}. Supervisor approval required. Other cities continue monitoring.")
+            st.warning(f"{CITIES[zone]['name']}: major leak at {incident['sim'].location['area']}. Approval required.")
             yes, no = st.columns(2)
             if yes.button(f"Approve dispatch · {CITIES[zone]['name']}", key=f"yes_{zone}", type="primary", width="stretch"):
                 monitor.approve(zone, True)
@@ -167,10 +197,17 @@ def dashboard():
                 st.rerun(scope="fragment")
 
     st.divider()
-    zone = st.selectbox("City details", list(CITIES), format_func=lambda key: CITIES[key]["name"], key="focus_city")
-    city = monitor.cities[zone]
+    city_cards(monitor)
+    st.divider()
+    selection, follow = st.columns([2, 1])
+    with follow:
+        follow_live = st.checkbox("Follow active city", key="follow_live")
+    if follow_live:
+        st.session_state.focus_city = monitor.focus_zone
+    with selection:
+        zone = st.selectbox("City", list(CITIES), format_func=lambda key: CITIES[key]["name"], key="focus_city", on_change=pin_city)
     sim = monitor.selected_sim(zone)
-    live, performance, cost = st.tabs(["Pressure & flow", "Agent performance", "Maintenance cost"])
+    live, performance = st.tabs(["Pressure & flow", "Agent performance"])
     with live:
         frame = pd.DataFrame([row for row in monitor.history if row["city"] == CITIES[zone]["name"]])
         if not frame.empty:
@@ -179,13 +216,12 @@ def dashboard():
                 st.altair_chart(sensor_chart(frame, "Pressure", "Pressure (PSI)", monitor.settings["pressure_limit"]), width="stretch")
             with b:
                 st.altair_chart(sensor_chart(frame, "Flow_Rate", "Flow (L/min)", monitor.settings["flow_limit"]), width="stretch")
-            st.caption("Dashed lines show detection limits. The x-axis is simulated arrival time, not a timestamp from Kaggle. Latest 600 observations across cities are retained.")
+            st.caption("Dashed line: detection limit · Simulation time")
         else:
             st.info("No reading for this city yet. Run the stream or choose another city.")
         if monitor.performance:
             st.altair_chart(trend(list(monitor.performance), "seconds", ["confirmed", "completed"], "Incidents / repairs (all cities)"), width="stretch")
     with performance:
-        st.caption("Across all cities · Local monitoring inspired by Lab 9: actual agent execution time, traces, messages and errors. No LangSmith connection, tokens or external LLM calls.")
         a, b, c, d = st.columns(4)
         a.metric("Messages sent", monitor.total_messages)
         b.metric("Agent calls", monitor.total_calls)
@@ -207,27 +243,10 @@ def dashboard():
                 st.altair_chart(trend(list(monitor.performance), "seconds", ["messages"], "Messages sent (all cities)"), width="stretch")
             with faults:
                 st.altair_chart(trend(list(monitor.performance), "seconds", ["failures", "errors"], "Failures / errors (all cities)"), width="stretch")
-        st.caption("Execution time measures local Python work, excluding the 0.5-second UI interval and approval wait. A simulated team failure is separate from an execution error. Latest 1,500 traces are shown; counters cover the full session.")
-    with cost:
-        st.caption(f"Across all cities · Estimated maintenance only: {monitor.base_cost:,.2f} SAR per repair start + {monitor.cost_per_km:,.2f} SAR/km straight-line distance. Each repair start is counted once. These are editable demonstration assumptions, not actual utility prices.")
-        tokens, api = st.columns(2)
-        tokens.metric("LLM tokens", "0")
-        api.metric("LLM / API cost (SAR)", "0.00")
-        if monitor.performance:
-            st.altair_chart(trend(list(monitor.performance), "seconds", ["cost_sar"], "Estimated cumulative cost (SAR)"), width="stretch")
-
     st.divider()
-    details, messages, incidents, evaluation = st.tabs(["Agents & map", "Message log", "Incidents", "Dataset evaluation"])
+    details, messages, incidents, evaluation = st.tabs(["Map", "Message log", "Incidents", "Dataset evaluation"])
     with details:
-        left, right = st.columns([1, 1.4])
-        with left, st.container(border=True):
-            st.subheader("Agent status")
-            if sim:
-                st.caption("Active incident agents, or the latest reading when no incident is active.")
-                st.dataframe(pd.DataFrame([{"Agent": a.name, "Status": a.status} for a in sim.agents.values()]), hide_index=True, width="stretch")
-            else:
-                st.info("Waiting for this city's first reading.")
-        with right, st.container(border=True):
+        with st.container(border=True):
             st.subheader("Incident and teams")
             if sim:
                 st.write(" / ".join(sim.reading[key] for key in ("Zone", "Block", "Pipe")))
@@ -238,7 +257,7 @@ def dashboard():
             else:
                 points = [{"latitude": CITIES[zone]["latitude"], "longitude": CITIES[zone]["longitude"], "Point": CITIES[zone]["name"]}]
             st.map(pd.DataFrame(points), latitude="latitude", longitude="longitude", zoom=11, height=280)
-            st.caption("Virtual locations in Saudi Arabia for demonstration only. City names are assigned to Zones; each Block/Pipe has a fixed display position. Sensor values and reference labels are unchanged. Each city has its own two teams; distances are straight-line, not road routes.")
+            st.caption("Virtual Saudi locations · Straight-line distances")
     with messages:
         st.subheader("Message log")
         log = [{**m, "content": json.dumps(m["content"], ensure_ascii=False)} for m in monitor.messages]
@@ -246,9 +265,9 @@ def dashboard():
             st.dataframe(pd.DataFrame(log), hide_index=True, width="stretch", column_config={
                 "sender": "From", "receiver": "To", "performative": "Message type", "content": "Content", "seconds": "Simulation seconds"})
         else:
-            st.info("Press Run or Next step to start.")
+            st.info("Press Run to start.")
         st.download_button("Download message log", json.dumps(list(monitor.messages), indent=2), file_name="raqeeb_messages.json", mime="application/json")
-        st.caption("Latest 1,500 messages across all cities. Delivered distinguishes queued from processed messages; cancelled marks duplicate incident requests that were merged into an existing open incident.")
+
     with incidents:
         recent = {item["id"]: item for item in monitor.incidents}
         recent.update({item["id"]: item for item in monitor.open_incidents.values()})
@@ -259,14 +278,14 @@ def dashboard():
             st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
         else:
             st.info("No confirmed incidents yet.")
-        st.caption("Repeated alerts for the same open pipe are merged. Rejected or unserviceable incidents remain unresolved. Pending incidents in that city wait for its active task; other cities continue. Latest 500 incident records plus every open incident are retained.")
+
     with evaluation:
-        st.caption("All 5,000 original rows, using the loaded detection limits. This is descriptive evaluation on synthetic rule-based labels, not live or unseen Saudi utility data.")
+
         scores = evaluate(readings, labels, monitor.settings["pressure_limit"], monitor.settings["flow_limit"])
         for card, key in zip(st.columns(4), ("accuracy", "precision", "recall", "f1")):
             card.metric("F1 score" if key == "f1" else key.title(), f"{scores[key]:.2%}")
         st.dataframe(pd.DataFrame([scores]), hide_index=True, width="stretch")
-    st.caption("Synthetic Kaggle data · Virtual Saudi locations · Leakage_Flag is used only for evaluation · Monitoring continues while this browser session is open; Pause freezes readings and repairs.")
+
 
 
 dashboard()

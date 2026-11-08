@@ -39,3 +39,19 @@ h3 { font-size: 1.15rem; color: #103d70; }
 .city-readings small { display: block; font-size: .75rem; color: #516986; }
 .city-readings strong { display: block; font-size: 1.6rem; color: #103d70; font-weight: 600; }
 .city-task { font-size: .8rem; border-top: 1px solid #e6edf5; padding-top: 10px; color: #244e7c; }
+.agent-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 16px; }
+.flow-node { border-radius: 7px; padding: 8px 12px; background: #e5eef9; color: #315b88; font-size: .8rem; }
+.flow-node.working { background: #1466c3; color: #fff; }
+.flow-arrow { color: #7e9bbb; }
+.agent-card { background: #fff; border: 1px solid #dce7f3; border-radius: 12px; padding: 16px; margin-bottom: 12px; min-height: 125px; }
+.agent-card.working { border: 2px solid #1466c3; background: #edf5ff; padding: 15px; box-shadow: 0 0 0 3px #1466c30d; }
+.agent-card-title { display: flex; align-items: center; gap: 9px; color: #103d70; font-size: .95rem; }
+.agent-dot { width: 9px; height: 9px; background: #a6b6c8; border-radius: 50%; flex-shrink: 0; }
+.working .agent-dot { background: #1466c3; animation: agent-pulse 1s infinite; }
+.agent-state { font-size: .95rem; margin: 10px 0 6px; color: #315b88; }
+.agent-card small { font-size: .7rem; color: #6e839b; }
+.live-messages { background: #eaf2fc; border-radius: 10px; padding: 6px 14px; margin-top: 4px; }
+.live-message { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; font-size: .8rem; color: #315b88; }
+.live-message span { margin-left: auto; font-size: .7rem; padding: 3px 7px; border-radius: 5px; background: #d5e5fa; color: #103d70; }
+@keyframes agent-pulse { 50% { box-shadow: 0 0 0 5px #1466c322; } }
+@media (prefers-reduced-motion: reduce) { .working .agent-dot { animation: none; } }
