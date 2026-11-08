@@ -1,7 +1,7 @@
 Dataset attribution: Talha.97S
 Source: https://www.kaggle.com/datasets/talha97s/smart-water-leak-detection-dataset
 License listed by the source: MIT
-Adaptation: selected six columns and shortened the pressure and flow column names.
+Adaptation: selected eight columns and shortened the pressure and flow column names.
 
 MIT License
 
