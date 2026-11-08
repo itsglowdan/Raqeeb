@@ -33,6 +33,7 @@ Ten tests cover normal readings, confirmation, approval, rejection, failure reco
 ## Files
 
 - `app.py`: Streamlit interface and controls.
+- `style.css` and `.streamlit/config.toml`: blue project identity and display styling.
 - `agents.py`: five agent roles and distance calculation.
 - `simulation.py`: message queue, step scheduling, scenario selection and evaluation.
 - `data_loader.py`: data loading and validation.
