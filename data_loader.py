@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 DATA_FILE = Path(__file__).parent / "data" / "raqeeb_data.csv"
-COLUMNS = ["Pressure", "Flow_Rate", "Zone", "Block", "Pipe", "Leakage_Flag"]
+COLUMNS = ["Pressure", "Flow_Rate", "Zone", "Block", "Pipe", "Latitude", "Longitude", "Leakage_Flag"]
 
 
 def load_data(path=DATA_FILE):
@@ -23,6 +23,10 @@ def load_data(path=DATA_FILE):
             flow = float(row["Flow_Rate"])
             if not all(math.isfinite(value) and value >= 0 for value in (pressure, flow)):
                 raise ValueError(f"Invalid reading on line {line}")
+            latitude = float(row["Latitude"])
+            longitude = float(row["Longitude"])
+            if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                raise ValueError(f"Invalid coordinates on line {line}")
             if row["Leakage_Flag"] not in ("0", "1"):
                 raise ValueError(f"Invalid leakage label on line {line}")
 
@@ -32,6 +36,8 @@ def load_data(path=DATA_FILE):
                 "Zone": row["Zone"],
                 "Block": row["Block"],
                 "Pipe": row["Pipe"],
+                "Latitude": latitude,
+                "Longitude": longitude,
             })
             # Keep test labels separate from sensor readings.
             labels.append(int(row["Leakage_Flag"]))
