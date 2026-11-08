@@ -24,3 +24,18 @@ h3 { font-size: 1.15rem; color: #103d70; }
   .raqeeb-header p { font-size: .85rem; }
   .raqeeb-mark { width: 48px; height: 58px; }
 }
+.city-card { padding: 18px; margin-top: 12px; background: white; border: 1px solid #dce7f3; border-top: 4px solid #9aabbc; border-radius: 12px; min-height: 240px; }
+.city-card.normal { border-top-color: #209b69; }
+.city-card.suspected { border-top-color: #d28b12; }
+.city-card.leak { border-top-color: #d45454; }
+.city-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.city-heading h3 { padding: 0; margin: 0; }
+.city-heading > span { font-size: .75rem; padding: 4px 8px; border-radius: 12px; background: #edf2f8; }
+.normal .city-heading > span { background: #e7f5ed; color: #146345; }
+.suspected .city-heading > span { background: #fff4dc; color: #855500; }
+.leak .city-heading > span { background: #ffeded; color: #993b3b; }
+.city-card p { margin: 10px 0; font-size: .78rem; color: #516986; }
+.city-readings { display: flex; gap: 36px; padding: 12px 0 4px; }
+.city-readings small { display: block; font-size: .75rem; color: #516986; }
+.city-readings strong { display: block; font-size: 1.6rem; color: #103d70; font-weight: 600; }
+.city-task { font-size: .8rem; border-top: 1px solid #e6edf5; padding-top: 10px; color: #244e7c; }

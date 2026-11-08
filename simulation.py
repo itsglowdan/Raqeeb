@@ -1,4 +1,5 @@
 from collections import deque
+from time import perf_counter
 
 from agents import Dispatch, LeakLocator, PressureMonitor, RepairTeam, UsageMonitor
 
@@ -15,6 +16,8 @@ class Simulation:
         self.repair_ticks = repair_ticks
         self.queue = deque()
         self.messages = []
+        self.traces = []
+        self.conversation_id = "reading-1"
         self.step_number = 0
         self.detected = False
         self.repaired = False
@@ -35,7 +38,7 @@ class Simulation:
     def send(self, sender, receiver, performative, content):
         message = {"step": self.step_number, "sender": sender, "receiver": receiver,
                    "performative": performative, "ontology": "water-leak",
-                   "conversation_id": "reading-1", "content": dict(content), "delivered": False}
+                   "conversation_id": self.conversation_id, "content": dict(content), "delivered": False}
         self.messages.append(message)
         self.queue.append(message)
 
@@ -48,11 +51,26 @@ class Simulation:
     def step(self):
         self.step_number += 1
         for team in self.teams:
-            team.tick()
+            if team.remaining:
+                self.call_agent(team.name, "repair_tick", team.tick)
         if self.queue:
             message = self.queue.popleft()
             message["delivered"] = True
-            self.agents[message["receiver"]].receive(message)
+            self.call_agent(message["receiver"], message["performative"],
+                            lambda: self.agents[message["receiver"]].receive(message))
+
+    def call_agent(self, name, action, callback):
+        start = perf_counter()
+        error = ""
+        try:
+            callback()
+        except Exception as exception:
+            error = f"{type(exception).__name__}: {exception}"
+            raise
+        finally:
+            self.traces.append({"agent": name, "action": action,
+                                "duration_ms": (perf_counter() - start) * 1000,
+                                "error": error, "step": self.step_number})
 
     def approve(self, accepted):
         if self.waiting_approval:
