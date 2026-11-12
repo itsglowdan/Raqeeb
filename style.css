@@ -55,3 +55,6 @@ h3 { font-size: 1.15rem; color: #103d70; }
 .live-message span { margin-left: auto; font-size: .7rem; padding: 3px 7px; border-radius: 5px; background: #d5e5fa; color: #103d70; }
 @keyframes agent-pulse { 50% { box-shadow: 0 0 0 5px #1466c322; } }
 @media (prefers-reduced-motion: reduce) { .working .agent-dot { animation: none; } }
+.raqeeb-status.normal { border-left-color: #209b69; background: #eaf7ef; }
+.raqeeb-status.suspected { border-left-color: #d28b12; background: #fff5df; }
+.raqeeb-status.leak { border-left-color: #d45454; background: #fff0f0; }

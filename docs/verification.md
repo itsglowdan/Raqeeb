@@ -64,3 +64,9 @@ These are genuine application captures from development verification, not fabric
 The app is a finite educational simulation. Rules have not been calibrated on independent physical network data. Background tiles and map libraries require internet; coordinate tables/exports do not. The dataset has no measurement times, pipeline connectivity or sensor availability. Team positions and work duration are explicitly configured simulation parameters. Session state is not durable storage; users must download evidence. No real deployment, Blackboard submission, collaborator invitations or physical intervention was performed.
 
 The group must still run and save its own three manually configured experiments, review/finalize the academic report, poster and presentation, add the required GitHub collaborators later as agreed, and submit through Blackboard.
+
+## Automatic controls update
+
+The dataset and custom input are now prepared automatically without sequence editing or manual coordinate selection. Team positions are selected from original dataset longitude-extreme records. The main status card displays the current assessment, separate from sidebar execution state. Twenty-seven automated tests pass, including four new behavioral checks covering automatic full-dataset loading/order, replacement of custom values, exact automatic team coordinates, and assessment status preserved during Pause.
+
+Browser verification also passed one-click Dataset Run, Pause/Resume, automatic custom-input replacement without Add, Normal/Suspected/Leak cards, and preservation of the leak assessment during Pause. No removed sequence/location selectors or processed/total progress bar were rendered, and no uncaught browser errors occurred. [Current automatic controls](screenshots/automatic_controls.png).

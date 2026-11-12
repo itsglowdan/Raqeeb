@@ -13,15 +13,16 @@ python -m streamlit run app.py
 
 Open http://localhost:8501 if the browser does not open. Leave the terminal running; Ctrl+C stops the application. GitHub ZIP downloads sometimes contain another `Raqeeb-main` folder: enter that inner folder first. No API key, LLM or paid service is required.
 
-## Prepare readings
+## Automatic reading inputs
 
-1. Open **Reading source and inputs** in the sidebar. Dataset filters apply consistently to summaries, tables, charts, map and exports.
-2. **Dataset Readings:** choose all filtered records or specific record references, then **Add dataset readings**. Original row order is preserved.
-3. **Custom Readings:** select District, Section, Pipeline and one exact reference record for coordinates. Enter pressure, flow and vibration, then **Add reading** for each intended sample. Inputs start empty. They are explicitly unlabeled and never added to the original CSV.
-4. Review the sequence and adjustable pressure/flow/major thresholds, timeout, retry limit and simulated team duration. Both sources use these parameters. Vibration is retained and charted; the approved detection rule uses pressure and flow only.
-5. Team start positions are configurable dataset record references, not known depots. Distances are straight-line, not travel routes.
+1. Choose **Dataset Readings** in the sidebar. All 5,000 original records load automatically in their original row order. Press **Run**; no record selection or Add action is needed.
+2. Or choose **Custom Readings** and enter only pressure and flow. The current values automatically replace the custom input. The first original dataset record supplies its exact location and reference vibration value; no location selection is required. This is an unlabeled custom simulation input, not an original dataset observation.
+3. Optionally adjust detection/coordination parameters in the expandable settings. Both sources use those parameters.
+4. Team start locations are assigned automatically to the records with minimum and maximum dataset longitude. These are explicit software simulation positions, not real maintenance depots. Record references and exact coordinates remain in the run export.
 
-A dataset sequence and a custom sequence can also be combined. Dataset records are sorted by original index; custom records follow in insertion order. Duplicate dataset records are not added twice. Every custom input has its own reference.
+There is no Reading Sequence editor, Include all filtered records checkbox, Dataset records picker, Add reading action, or manual team-location picker. Editing custom pressure/flow updates the prepared input automatically; changing source replaces it. The original CSV remains untouched.
+
+The large main status card shows the current reading's **Normal, Suspected or Leak indicated rule assessment**, or Checking while that reading awaits assessment. Before any readings it shows Awaiting readings. It never presents Paused/Running as the water condition. Execution status appears beside the sidebar controls. The reading-progress bar and processed/total counter have been removed.
 
 ## Run and monitor
 
@@ -30,7 +31,7 @@ A dataset sequence and a custom sequence can also be combined. Dataset records a
 - **Resume** preserves the exact run position, configuration and messages.
 - Completion occurs after all selected readings and pending tasks finish or are explicitly reported as failed. The dataset never loops automatically. Browser navigation does not recreate agents.
 - Major dual-rule assessments wait for user approval in the agent panel. Approve/reject actions are disabled while paused.
-- **Experiments → Start fresh experiment** creates isolated execution state on the next Run. It archives the old run snapshot and keeps the configured sequence. Configuration edits affect a fresh run, not Resume.
+- **Experiments → Start fresh experiment** creates isolated execution state on the next Run. It archives the old run snapshot and keeps the configured sequence. Changing inputs or parameters prepares a fresh run on the next Run click; an unchanged paused run uses Resume.
 
 The previous light blue interface is restored. All inputs and Run/Pause/Resume/Load-Reset controls are in the sidebar. The main view shows execution status, live agents, pressure/flow charts and actual assessments versus simulated task completions. Counters, Message log, Incidents, Dataset evaluation, Experiments, Readings and Reports remain available. **Map is the last tab**, retaining the new Riyadh dataset's exact coordinates, geographic clustering and record details. **Riyadh overview is the final section**; View Zone selects that zone's charts and map.
 
@@ -46,17 +47,17 @@ Messages contain message ID, sender, receiver, performative, content, ontology, 
 
 ## User-controlled experiments
 
-No preset scenarios are installed. Use the sidebar to prepare the desired inputs and Experiments to enter an optional name, purpose and expected outcome. Configure team availability, assignment failure or Reporting Agent refusal/lost acknowledgment there. Restore controls can recover an active or paused agent. Save/export actual outcomes separately from expectations.
+No preset scenarios are installed. Use the sidebar to enter custom pressure/flow or select automatic dataset playback and Experiments to enter an optional name, purpose and expected outcome. Configure team availability, assignment failure or Reporting Agent refusal/lost acknowledgment there. Restore controls can recover an active or paused agent. Save/export actual outcomes separately from expectations.
 
 Suggested manual test plans (enter these yourself; outcomes below are expectations):
 
 | Test | Inputs and configuration | Expected behavior |
 |---|---|---|
-| Normal | Custom pressure 65, flow 80, vibration 3 at any exact reference; default limits | Normal assessment, no team negotiation, acknowledged report |
-| Dual anomaly | Custom pressure 50, flow 110, vibration 3 | Dual-rule assessment, exact location, closest available configured team selected, simulated task recorded |
+| Normal | Custom pressure 65, flow 80 at the automatically assigned reference location; default limits | Normal assessment, no team negotiation, acknowledged report |
+| Dual anomaly | Custom pressure 50, flow 110 | Dual-rule assessment, exact location, closest available configured team selected, simulated task recorded |
 | Agent failure | Same dual anomaly, Reporting Agent unavailable; timeout 20 steps, one retry | Actual refusals, bounded retry, explicit failed reporting task and terminal Failed run |
 
-For approval/reassignment, try pressure 35 and flow 110, select Team A's starting reference equal to the custom coordinate reference and enable Team A assignment failure. Approval precedes negotiation; Team B is selected after Team A fails. Normal means neither configured rule is crossed; one crossed rule is Suspected; both crossed rules mean Leak indicated. These are simulation thresholds, not official Saudi engineering limits.
+For approval/reassignment, try pressure 35 and flow 110, enable Team A assignment failure; it takes effect if Team A wins the distance negotiation. Approval precedes negotiation; Team B is selected after Team A fails. Normal means neither configured rule is crossed; one crossed rule is Suspected; both crossed rules mean Leak indicated. These are simulation thresholds, not official Saudi engineering limits.
 
 ## Data
 
@@ -80,6 +81,7 @@ See [verification](docs/verification.md), [actual exported verification runs](do
 ## Files
 
 - `data_loader.py`: validation, stable references, filtering and summaries.
+- `controls.py`: automatic input preparation, automatic team locations and assessment status.
 - `protocol.py`: ACL-like immutable message objects and queue.
 - `agents.py`: independent approved agent roles and supporting agents.
 - `simulation.py`: finite scheduler, state, coordination, retries and exports.

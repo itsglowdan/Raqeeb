@@ -40,7 +40,7 @@ See [complete model design](model_design.md) for the interaction diagram, agent-
 
 The supplied `riyadh_leakage_dataset_with_units.csv` is preserved byte for byte. It contains 5,000 records, ten original columns, five Zone values, 125 Location_Code values and 323 leak-indicated labels. Each row receives a stable in-memory original-index reference. The same location identifier can have many different coordinates, so the map never assigns one representative coordinate to an entire identifier.
 
-Pressure, flow and vibration retain original numerical precision internally. Friendly display labels do not rewrite identifiers. Custom readings are separate, explicitly unlabeled inputs using one exact original record as their coordinate reference. The CSV has no measurement timestamps, sensor connectivity fields, pipeline geometry, connectivity or flow direction. Those fields are not synthesized.
+Pressure, flow and vibration retain original numerical precision internally. Friendly display labels do not rewrite identifiers. Custom readings are separate, explicitly unlabeled inputs. The application automatically uses the first dataset record as their exact coordinate and vibration reference while users enter pressure and flow. The CSV has no measurement timestamps, sensor connectivity fields, pipeline geometry, connectivity or flow direction. Those fields are not synthesized.
 
 ### 3.3 Behaviors and decision rules
 
@@ -62,7 +62,7 @@ Run automatically advances the configured sequence and its queued tasks. Pause f
 
 ## 5. Scenarios and Verification
 
-The UI has no preset scenarios. Users prepare readings and fault conditions themselves, optionally documenting purpose and expected outcome. Required manual plans are described in README. Expected outcomes remain separate from observed results.
+The UI has no preset scenarios. Users choose automatic dataset playback or enter custom pressure/flow and configure fault conditions, optionally documenting purpose and expected outcome. Required manual plans are described in README. Expected outcomes remain separate from observed results.
 
 Three technical development verification runs were executed using actual dataset records. Full inputs, configuration, messages and outcomes are in [verification exports](verification/). They are not represented as group-member experiments.
 

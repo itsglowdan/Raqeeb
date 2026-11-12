@@ -9,6 +9,7 @@ import streamlit as st
 from data_loader import load_data, filter_data, custom_reading, LABELS
 from simulation import Simulation, Configuration, evaluate
 from ui import geographic, table, agent_activity, messages
+from controls import automatic_inputs, automatic_team_positions, assessment_status
 
 st.set_page_config(page_title='Raqeeb | رقيب', page_icon='💧', layout='wide')
 st.markdown(f"<style>{Path(__file__).with_name('style.css').read_text()}</style>", unsafe_allow_html=True)
@@ -70,62 +71,15 @@ def settings_view():
     locked = bool(run and run.status == 'Running')
     if run:
         st.info('Configuration changes apply to a fresh experiment. Resume keeps the active run configuration.')
-    source = st.segmented_control('Data Source', ['Dataset Readings', 'Custom Readings'], default='Dataset Readings', key='input_source')
+    source = st.radio('Data Source', ['Dataset Readings', 'Custom Readings'], key='input_source', disabled=locked)
+    pressure = flow = None
     if source == 'Dataset Readings':
-        st.caption('Use the dataset filters above. Measurements, coordinates and labels remain unchanged.')
-        all_rows = st.checkbox('Include all filtered records', value=True)
-        refs = selected.record_ref.tolist()
-        chosen = refs if all_rows else st.multiselect('Dataset records', refs)
-        if st.button('Add dataset readings', type='primary', disabled=locked or not chosen):
-            current = {row['record_ref'] for row in st.session_state.sequence}
-            records = selected[selected.record_ref.isin(chosen)].to_dict('records')
-            st.session_state.sequence.extend([{**row, 'source': 'Dataset Readings'} for row in records if row['record_ref'] not in current])
-            # Dataset playback always preserves original row order.
-            st.session_state.sequence.sort(key=lambda row: (row.get('source') == 'Custom simulation input', row.get('original_index') or 0))
-            st.rerun()
-    elif source == 'Custom Readings':
-        st.info('Custom simulation input · not labeled. Select one exact dataset record as the coordinate reference.')
-        location, values = st.container(), st.container()
-        with location:
-            st.markdown('**Select Location**')
-            zone = st.selectbox('District', sorted(data.Zone.unique()), key='custom_district', disabled=locked)
-            block = st.selectbox('Section', sorted(data[data.Zone == zone].Block.unique()), key='custom_section', disabled=locked)
-            pipe = st.selectbox('Pipeline', sorted(data[(data.Zone == zone)&(data.Block == block)].Pipe.unique()), key='custom_pipe', disabled=locked)
-            candidates = data[(data.Zone == zone)&(data.Block == block)&(data.Pipe == pipe)]
-            reference = st.selectbox('Coordinate reference record', candidates.record_ref.tolist(), key='custom_reference', disabled=locked)
-            row = candidates.loc[candidates.record_ref == reference].iloc[0].to_dict()
-            st.caption(f"{reference} · {row['Location_Code']}\n\nLatitude {row['Latitude']:.6f} · Longitude {row['Longitude']:.6f}")
-        with values:
-            st.markdown('**Enter Reading**')
-            pressure = st.number_input('Pressure (PSI)', min_value=0.0, value=None, step=1.0, key='custom_pressure', disabled=locked)
-            flow = st.number_input('Flow (L/min)', min_value=0.0, value=None, step=1.0, key='custom_flow', disabled=locked)
-            vibration = st.number_input('Vibration (mm/s)', min_value=0.0, value=None, step=.1, key='custom_vibration', disabled=locked)
-            st.caption('Vibration is preserved and displayed; the approved dual-monitor detection rule uses pressure and flow.')
-            if st.button('Add reading', type='primary', disabled=locked or None in [pressure, flow, vibration]):
-                try:
-                    count = max([int(r['record_ref'].split('-')[1]) for r in st.session_state.sequence if r['record_ref'].startswith('CUSTOM-')]+[0])+1
-                    st.session_state.sequence.append(custom_reading(row, pressure, flow, vibration, count))
-                    st.rerun()
-                except ValueError as error:
-                    st.error(str(error))
-        st.caption('Add each reading to the sequence before running.')
-    st.subheader('Reading Sequence')
-    a, b = st.columns(2)
-    if a.button('Remove last', disabled=locked or not st.session_state.sequence):
-        st.session_state.sequence.pop()
-        st.rerun()
-    if b.button('Reset inputs', disabled=locked):
-        st.session_state.sequence = []
-        for key in ['custom_pressure', 'custom_flow', 'custom_vibration']:
-            st.session_state.pop(key, None)
-        st.rerun()
-    if st.session_state.sequence:
-        frame = pd.DataFrame(st.session_state.sequence)
-        frame.insert(0, 'Sequence number', range(1, len(frame)+1))
-        table(frame)
+        st.caption('Dataset readings load automatically in their original order.')
     else:
-        st.info('No readings added yet')
-    st.caption(f'Readiness: {len(st.session_state.sequence):,} readings configured' if st.session_state.sequence else 'Not ready · Add at least one valid reading')
+        pressure = st.number_input('Pressure (PSI)', min_value=0.0, value=None, step=1.0, key='custom_pressure', disabled=locked)
+        flow = st.number_input('Flow (L/min)', min_value=0.0, value=None, step=1.0, key='custom_flow', disabled=locked)
+        st.caption('Custom simulation input · Location is assigned automatically.')
+    st.session_state.sequence = automatic_inputs(data, source, pressure, flow)
     with st.expander('Agent Parameters · simulation configuration', expanded=False):
         st.caption('These are configurable demonstration rules, not official engineering safety limits. Changes take effect in a fresh run.')
         old = st.session_state.configuration
@@ -148,12 +102,6 @@ def settings_view():
             st.session_state.configuration_valid = False
             st.error(str(error))
             st.caption('Invalid changes were not applied. The previous valid configuration remains active.')
-    st.subheader('Configured Simulated Teams')
-    st.caption('Positions are user-selected dataset coordinate references; not real maintenance depots. Straight-line distance is not travel distance.')
-    for name, key, default in [('Team A', 'team_a_record', 0), ('Team B', 'team_b_record', len(data)-1)]:
-        saved = st.session_state.get('configured_'+key, data.record_ref.iloc[default])
-        choice = st.selectbox(f'{name} position reference', data.record_ref.tolist(), index=data.record_ref.tolist().index(saved), key=key, disabled=locked)
-        st.session_state['configured_'+key] = choice
 
 def experiments_view():
     st.caption('Configure readings and parameters in Settings. No preset scenarios or scripted outcomes are loaded.')
@@ -209,17 +157,21 @@ with st.sidebar:
         settings_view()
     st.divider()
     current = st.session_state.run
+    signature = json.dumps({'source': st.session_state.input_source, 'configuration': st.session_state.configuration,
+                            'custom': [(r['Pressure_PSI'],r['Flow_Rate_Lmin']) for r in st.session_state.sequence] if st.session_state.input_source == 'Custom Readings' else None}, sort_keys=True)
+    changed = bool(current and signature != st.session_state.get('loaded_signature'))
+    st.caption('Execution: ' + (current.status if current else 'Ready'))
     a, b = st.columns(2)
-    if a.button('Resume' if current and current.status == 'Paused' else 'Run', type='primary', width='stretch',
-                disabled=(current is not None and current.status not in ['Ready', 'Paused']) or not st.session_state.sequence or not st.session_state.get('configuration_valid', True)):
+    if a.button('Resume' if current and current.status == 'Paused' and not changed else 'Run', type='primary', width='stretch',
+                disabled=bool(current and (current.status == 'Running' or (current.status in ['Completed','Failed'] and not changed))) or not st.session_state.sequence or not st.session_state.get('configuration_valid', True)):
+        if changed:
+            new_experiment()
+            current = None
         if current is None:
-            positions = {}
-            for name, key, default in [('Team A', 'team_a_record', 0), ('Team B', 'team_b_record', len(data)-1)]:
-                reference = st.session_state.get('configured_'+key, data.record_ref.iloc[default])
-                row = data[data.record_ref == reference].iloc[0]
-                positions[name] = {'record_ref': reference, 'position': [float(row.Latitude), float(row.Longitude)]}
+            positions = automatic_team_positions(data)
             current = Simulation(st.session_state.sequence, Configuration(**st.session_state.configuration), st.session_state.metadata, positions)
             st.session_state.run = current
+            st.session_state.loaded_signature = signature
         current.run()
         st.session_state.last_tick = time.monotonic()
         st.rerun()
@@ -246,10 +198,8 @@ heartbeat()
 st.markdown('''<div class="raqeeb-header"><div><small>WATER NETWORK MONITORING</small>
 <h1>Raqeeb <span lang="ar">| رقيب</span></h1>
 <p>Riyadh water network · Leak monitoring and maintenance dispatch</p></div></div>''', unsafe_allow_html=True)
-status = run.status if run else 'Ready'
-st.markdown(f'<div class="raqeeb-status"><h3>{status}</h3></div>', unsafe_allow_html=True)
-if run:
-    st.progress(len(run.outcomes)/len(run.readings), text=f'Readings processed: {len(run.outcomes):,} / {len(run.readings):,}')
+status, status_class = assessment_status(run)
+st.markdown(f'<div class="raqeeb-status {status_class}"><h3>{status}</h3></div>', unsafe_allow_html=True)
 a, b, c = st.columns(3)
 a.metric('Readings read', run.cursor if run else 0)
 b.metric('Leak assessments', sum(a['assessment']=='Leak indicated' for a in run.assessments) if run else 0)

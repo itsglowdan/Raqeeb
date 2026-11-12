@@ -56,7 +56,7 @@ Each instance exposes its execution state, latest action, actual last activity U
 | fail_team_a | false | One deliberate Team A assignment failure per run |
 | reporting_unavailable | false | Reporting Agent refuses requests until restored |
 | reporting_silent | false | Drop acknowledgments to demonstrate timeout exhaustion |
-| team coordinate references | first and last dataset records | Explicit configurable simulation start positions, not depots |
+| team coordinate references | dataset longitude minimum and maximum records | Automatic exact-coordinate simulation positions, not depots |
 | cursor / current_ref / step | 0 / none / 0 | Position, exact active record and execution step |
 | pending_reports | empty | Content, attempts, deadline and source reference for each reporting task |
 | reports / outcomes / events | empty | Actual traceable observations, distinct from user expected outcome |
@@ -81,3 +81,7 @@ For concrete payloads, inspect the committed verification JSON logs. Those are a
 Ready → Running ↔ Paused → Completed/Failed. All execution, including already-running team work and deadlines, freezes during Pause. Restoring an agent records a user action but creates no dispatch while paused. Resume continues the same queue. Completed means selected workflows have finished; a completed unresolved/rejected outcome is still explicitly unresolved, not a repaired pipe. Failed means validation, execution or exhausted reporting tasks failed. A handled Team A failure followed by successful Team B completion can still produce Completed, with the failure event retained.
 
 No interpolation, generated future readings, pipeline routes, measurement times, physical sensor states or water-loss estimates are added. Approved Phase 1 dispatch is demonstrated solely through simulated team state, without altering the source readings.
+
+## Automatic interface controls
+
+`controls.py` prepares the full original-order dataset without manual selection. Custom input automatically uses current pressure/flow with the first dataset row as exact location and vibration reference; it has no inherited leakage label. Input edits replace the prepared custom record rather than accumulating a queue. Team positions use exact dataset longitude-extreme records. These automatic choices are deterministic and exported for reproducibility. The main assessment card is separate from execution state, and waits for the current record assessment rather than showing a previous record’s result.
