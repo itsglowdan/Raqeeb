@@ -1,0 +1,32 @@
+[
+  {
+    "name": "normal",
+    "record_ref": "CSV-00001",
+    "status": "Completed",
+    "assessment": "Normal",
+    "messages": 7,
+    "reports": 1,
+    "events": 0,
+    "steps": 7
+  },
+  {
+    "name": "dual_anomaly",
+    "record_ref": "CSV-00029",
+    "status": "Completed",
+    "assessment": "Leak indicated",
+    "messages": 18,
+    "reports": 2,
+    "events": 0,
+    "steps": 19
+  },
+  {
+    "name": "reporting_failure",
+    "record_ref": "CSV-00029",
+    "status": "Failed",
+    "assessment": "Leak indicated",
+    "messages": 22,
+    "reports": 0,
+    "events": 8,
+    "steps": 57
+  }
+]

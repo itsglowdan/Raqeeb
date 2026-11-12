@@ -1,34 +1,31 @@
-# Submission requirements review
+# Submission review
 
-Reviewed against the supplied Project 2 requirements.
+The latest user specification is the implementation brief. The attached course guideline and rubric define academic requirements; they do not authorize fabricated data or completed submission claims. The supplied Phase 1 document defines the approved agent roles and team names.
 
-| Requirement | Evidence | Status |
-| --- | --- | --- |
-| Real-world problem, users and objectives | Report sections 1–2 | Prepared |
-| Nine-part Business Model Canvas | Report section 3 | Prepared |
-| Four or more interacting agents | Five roles; two shared Repair Team instances | Implemented |
-| PEAS, agent types and justification | Model design and report section 4 | Prepared |
-| Environment classification | Model design and report section 4 | Prepared |
-| Behaviors, parameters and environment | Agents, monitoring engine and design | Implemented/documented |
-| ACL-like communication and examples | Message log and report protocol table | Implemented/documented |
-| Three testing scenarios | Normal, minor leak, major leak with failure | Tested |
-| Failure/conflict recovery | Team failure reassignment and shared-fleet reservation tests | Tested |
-| Live agent status and message log | Top agent panel and Message log tab | Implemented |
-| Run controls and adjustable parameters | Run/Pause and sidebar controls | Implemented |
-| Python implementation | All application logic and UI authored in Python; Streamlit serves the UI | Implemented |
-| Public source repository | itsglowdan/Raqeeb | Published |
-| requirements.txt and setup/run README | Root files | Prepared |
-| Abstract, introduction, business model, design, conclusion, references | docs/report.md | Prepared |
-| Screenshots for all three scenarios | docs/screenshots/normal.png, minor.png, failure.png | Captured |
-| Group members and instructors as collaborators | Owner will add these later | Pending |
-| Final team review and Blackboard submission | Outside repository automation | Pending |
+| Requirement | Implementation or artifact |
+|---|---|
+| At least four distinct agents | Eight instances: five approved role families plus Reading and Reporting support |
+| Genuine ACL-like communication | `protocol.py` queue, correlated message/task IDs and actual logs |
+| PEAS, agent types, environment | `model_design.md` |
+| Behaviors, variables and protocols | `model_design.md`, source classes |
+| Configurable important parameters | Settings: pressure, flow, major limit, report timeout/retries, simulated work duration |
+| User-controlled scenarios, no presets | Settings sequence builder and Experiments metadata/fault controls |
+| Failure/conflict response | Reporting refusal/timeout with bounded retries; Team A failure and re-negotiation |
+| Interactive status and logs | Dashboard and Experiments actual agent state/messages; sidebar execution controls |
+| Data and map integrity | Supplied CSV unchanged; exact per-record coordinates; point clusters; no invented geometry |
+| Python implementation | Python application and Streamlit/Folium/Altair components; no separate frontend app |
+| Setup and dependencies | `requirements.txt`, README Windows/Python commands |
+| Meaningful verification | `tests/test_system.py`, actual `docs/verification/*.json`, browser evidence |
+| Business Model Canvas | Nine elements in report draft, aligned with Phase 1 |
+| Report | `report.md` draft: abstract, introduction, business model, model design, implementation, scenarios, conclusion, references, source appendix guidance |
+| Poster and presentation | Content drafts in `poster.md` and `presentation.md`; final formatted artifacts and delivery remain team work |
 
-The chart count is not prescribed in the project requirements. Three charts are retained without removing required interface features. The runtime has no financial feature; the report's business model includes the required qualitative cost-structure component.
+## Before submission
 
-Dataset limits: synthetic readings; no timestamps or real Riyadh topology. Original measurements and labels stay unchanged. Display positions and team states are simulated. Performance metrics are descriptive, not independent field validation. See the report for details.
+- The team must conduct and save its own three manual experiments, including at least one failure/conflict. Development verification exports are separate evidence, not a claim of group-member participation.
+- Review the report draft, add required final formatting and code appendix, and include the team's own scenario screenshots. Check abstract length after edits (course requirement: 150–250 words).
+- Complete the final designed poster and presentation. Practice explaining actual agent cooperation and observed outcomes.
+- Add group members and Dr. Eman / T. Manairh to GitHub. The user already said this will be done later; account names have not been invented or invitations sent.
+- Upload the final academic artifacts and repository link to Blackboard according to the instructor's deadline. No submission has been made by this application.
 
-## Validation
-
-- 31 automated tests passed, including all 5,000 rows, concurrent shared-team repairs, busy-team waiting and stale-offer reservation checks.
-- Browser checks passed for Run/Pause, stopping at the dataset end, exactly three monitoring charts, zone selection, the final overview position, major approval, team failure recovery and mobile overflow.
-- Manual demonstration inputs are 65/80, 50/110 and 35/110 (PSI / L/min), with Team A failure enabled for the last example. Manual readings have no reference labels; evaluation uses the original dataset only. Dataset test fixtures remain separate from the interface.
+The rubric weights are idea 10%, business model 10%, implementation 30%, poster 10%, report 25% and presentation 15%. The software alone does not satisfy the poster, presentation or final submission requirements.

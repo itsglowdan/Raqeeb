@@ -1,7 +1,10 @@
 Dataset attribution: Talha.97S
 Source: https://www.kaggle.com/datasets/talha97s/smart-water-leak-detection-dataset
 License listed by the source: MIT
-Adaptation: selected eight columns and shortened the pressure and flow column names.
+Current artifact: riyadh_leakage_dataset_with_units.csv supplied by the project user.
+All ten original columns and file bytes are preserved. Riyadh coordinates were supplied
+by the user; they are demonstration locations, not independently verified infrastructure.
+Upstream numerical-data attribution is retained below.
 
 MIT License
 
