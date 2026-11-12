@@ -4,13 +4,13 @@ The latest user specification is the implementation brief. The attached course g
 
 | Requirement | Implementation or artifact |
 |---|---|
-| At least four distinct agents | Eight instances: five approved role families plus Reading and Reporting support |
+| At least four distinct agents | Six instances of the five approved roles; validation/recording are ordinary functions |
 | Genuine ACL-like communication | `protocol.py` queue, correlated message/task IDs and actual logs |
 | PEAS, agent types, environment | `model_design.md` |
 | Behaviors, variables and protocols | `model_design.md`, source classes |
-| Configurable important parameters | Sidebar: pressure, flow, major limit, report timeout/retries, simulated work duration |
+| Configurable important parameters | Sidebar: pressure, flow, major limit, simulated work duration |
 | User-controlled scenarios, no presets | Automatic dataset/custom input and sidebar fault controls; no preset outcomes |
-| Failure/conflict response | Reporting refusal/timeout with bounded retries; Team A failure and re-negotiation |
+| Failure/conflict response | Team A assignment failure, refusal and re-negotiation |
 | Interactive status and logs | Main live-agent panel and actual message log; sidebar execution controls |
 | Data and map integrity | Supplied CSV unchanged; exact per-record coordinates; point clusters; no invented geometry |
 | Python implementation | Python application and Streamlit/Folium/Altair components; no separate frontend app |

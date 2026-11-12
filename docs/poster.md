@@ -10,7 +10,7 @@ A Python multi-agent simulation cross-checks pressure and flow, preserves each r
 
 ## Agents and interaction
 
-Reading → Pressure ↔ Usage → Locator → Dispatch ↔ Team A/B. Dispatch also exchanges reporting requests and acknowledgments with the Reporting Agent. Major dual-rule assessments require a supervisor's approval.
+Environment validation → Pressure ↔ Usage → Locator → Dispatch ↔ Team A/B. An ordinary function records outcomes. Major dual-rule assessments require a supervisor's approval.
 
 ## Data and environment
 
@@ -18,7 +18,7 @@ Reading → Pressure ↔ Usage → Locator → Dispatch ↔ Team A/B. Dispatch a
 
 ## Verification results
 
-Actual development verification: normal run completed in 7 steps with 7 messages; dual anomaly completed in 19 steps with 18 messages; reporting refusal run ended Failed after bounded retries in 57 steps with 22 messages. See exported evidence for inputs and full traces. These are development verification runs, not the team's manual submission experiments.
+Actual development verification: normal run completed in 4 steps with 4 messages; dual anomaly completed in 14 steps with 13 messages; Team A failure was handled by reassignment to B in 21 steps with 19 messages. See exported evidence for inputs and full traces. These are development verification runs, not the team's manual submission experiments.
 
 ## Value and future work
 

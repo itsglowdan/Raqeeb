@@ -1,82 +1,50 @@
 # Verification record
 
-Development checks completed on 12 November 2026. This record distinguishes automated verification, browser-driven development experiments and the group's still-required manual submission work.
+Development verification, 12 November 2026. These are actual development checks, not a claim that group members have completed their required manual experiments.
 
-## Dataset integrity
+## Current architecture
 
-The supplied file and committed CSV were compared byte for byte and matched.
+Five approved roles: Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team. Team A/B are two instances of the last role: six independent instances overall. Validation and record creation are ordinary functions. No auxiliary Reading/Reporting agent is instantiated or receives messages. Obsolete reporting-agent fault and timeout/retry controls are removed.
 
-SHA-256: `d9b94e6923b1952e327d13019b624d4300ad04744306c1fdd0d860e93a10ecb3`.
+## Data integrity
 
-Observed: 5,000 rows, ten original columns, no missing values, 323 labels equal to 1, 4,677 labels equal to 0. Stable row references preserve repeated identifier/coordinate associations. No older CSV is used by the application.
+The supplied CSV remains byte-for-byte unchanged. SHA-256: `d9b94e6923b1952e327d13019b624d4300ad04744306c1fdd0d860e93a10ecb3`.
+
+Observed: 5,000 records, ten original columns, no missing values, 323 positive labels. The presentation mappings are Zone → District, Block → Section, Pipe → Pipeline. Original columns, identifiers (including Zone_4) and exact row-coordinate associations are preserved.
 
 ## Backend checks
 
-`python -m unittest discover -s tests -v`: **23 tests passed**. Coverage includes source precision, filtering and summaries, exact custom coordinate references, invalid measurements, genuine correlated communication, label exclusion, threshold boundaries, nearest-team choice, approval rejection, pause/resume with no duplication, reassignment after failure, unavailable teams, reporting refusal, bounded acknowledgment timeouts, restoration, report idempotence, isolated runs and confusion-matrix values.
+`python -m unittest discover -s tests -v`: 31 behavioral tests cover validation, precision, display-only field mappings, exact coordinate associations, automatic input preparation, label exclusion, genuine ACL exchanges, rule boundaries, nearest-team negotiation, approval/rejection, pause/resume, failure/reassignment, restoration, unavailable teams, isolated runs, local record traceability, network-wide aggregation, language mappings and plain line charts.
 
-A full 5,000-record scheduler run with explicit approval of major tasks completed: 5,000 assessments, 38,950 messages, 5,357 report records and no execution-error events. This was a development execution check, not a replay of measured real-world time.
+A full 5,000-record run with explicit approval of major assessments completed: 5,000 assessments, 23,236 actual messages, 5,357 local records and no execution-error events. Defaults agree with dataset labels at TP 323 / TN 4,643 / FP 34 / FN 0; these are not field accuracy claims.
 
-`python tests/verify_runs.py` creates three actual development verification runs. Inputs, configuration, expected outcome metadata, observed outcomes, actual messages and failure events are saved in `verification/*.json`. Summary:
+`python tests/verify_runs.py` executes the current technical cases and saves their inputs/configuration/actual messages/outcomes in `verification/*.json`:
 
-| Run | Status | Messages | Reports | Steps |
-|---|---|---:|---:|---:|
-| Normal CSV-00001 | Completed | 7 | 1 | 7 |
-| Dual anomaly CSV-00029 | Completed | 18 | 2 | 19 |
-| Reporting refusal CSV-00029 | Failed | 22 | 0 | 57 |
+| Case | Input | Status | Messages | Local records | Steps |
+|---|---|---|---:|---:|---:|
+| Normal | CSV-00001 | Completed | 4 | 1 | 4 |
+| Dual anomaly | CSV-00029 | Completed | 13 | 2 | 14 |
+| Team A failure | CSV-00029, A fails on assignment | Completed after reassignment to B | 19 | 2 | 21 |
 
-Counts reflect those specific executions and are not hardcoded UI metrics.
+Failure handling records one actual team_failure event in the third case. The failed team refuses new offers until restored. The workflow records an explicit unresolved result if neither team is available.
 
 ## Browser checks
 
-Chromium/Playwright exercised the running Streamlit app:
+Chromium/Playwright verified:
 
-- Entered custom pressure/flow/vibration, added a sequence, started automatic execution and observed completion.
-- Paused, verified unchanged run step/state during the pause, resumed, and navigated between pages without restarting the run.
-- Executed a dual-anomaly custom input and observed simulated task coordination.
-- Made Reporting Agent unavailable, observed bounded retries and terminal Failed status, and exported the actual experiment JSON containing report_failed events.
-- Opened Reports and exported run data; opened Settings and checked a 390-pixel mobile viewport.
-- Loaded the geographic map; applied District/Section/Pipeline filters; verified exact record details, map zoom/reset and View record navigation.
-- Confirmed six initial geographic clusters contained 984 + 965 + 207 + 819 + 8 + 2,017 = 5,000 records.
-- Verified OpenStreetMap raster tiles loaded successfully. Triggered the supported Leaflet tileerror event and observed the explicit background-unavailable warning while record points remained available.
-- Final browser flows had no uncaught page errors.
+- Dataset playback advances through records from different districts without any district picker.
+- The title card keeps the **same connected DOM node**, with zero removal events during multiple automatic execution steps. Only the dynamic dashboard fragment refreshes during routine playback.
+- Pause/Resume and finite custom-input completion work.
+- Only the six approved-role instances appear; there is no Supporting agents panel or auxiliary-agent state.
+- The map still uses exact dataset coordinates and renders in Arabic/English.
+- Map reading details display District, Section and Pipeline; no source fields were renamed.
+- Arabic/English switching preserves configured input and active execution. Earlier checks also cover lazy tabs, all-district line charts, actual record-count clusters, tile-error warnings and a 390px viewport.
+- No uncaught page errors occurred in the final browser workflow.
 
-The cloud browser required its external asset requests to use the environment's trusted Python HTTP client and inherited proxy/CA settings. TLS verification remained enabled. This was test-harness networking only; no bypass or proxy configuration was added to the application.
+[Current interface with original roles](screenshots/original_roles.png). Older screenshots in the repository are historical development evidence, not current architecture previews.
 
-## Interface restoration check
+## Limits and submission
 
-[Current restored interface](screenshots/restored_interface.png)
+This is a finite educational simulation. There is no live sensor deployment, measured physical repair, real pipeline geometry or measurement timestamp. Teams and work duration are simulation state. Rule assessments are separate from supplied labels. Future readings and water-loss estimates are not generated. Session state is not durable storage; the actual message log can be downloaded.
 
-The classic light blue single-screen interface was restored while retaining the exact supplied Riyadh CSV and the clustered OpenStreetMap component. Browser verification passed sidebar Run/Pause/Resume, finite completion, View Zone selection, the final Map tab, inline record details and Experiments, with no uncaught page errors. All 23 backend tests still pass. The captures below record the earlier dark interface; they remain historical development evidence rather than previews of the restored appearance.
-
-## Captured UI evidence
-
-These are genuine application captures from development verification, not fabricated mockups or group-member submission evidence.
-
-- [Dashboard and exact-coordinate clusters](screenshots/dashboard.png)
-- [Normal custom-input run](screenshots/normal.png)
-- [Dual-anomaly custom-input run](screenshots/minor.png)
-- [Reporting failure run](screenshots/failure.png)
-- [Settings](screenshots/settings.png)
-- [Mobile settings](screenshots/mobile.png)
-
-## Remaining limitations
-
-The app is a finite educational simulation. Rules have not been calibrated on independent physical network data. Background tiles and map libraries require internet; coordinate tables/exports do not. The dataset has no measurement times, pipeline connectivity or sensor availability. Team positions and work duration are explicitly configured simulation parameters. Session state is not durable storage; users must download evidence. No real deployment, Blackboard submission, collaborator invitations or physical intervention was performed.
-
-The group must still run and save its own three manually configured experiments, review/finalize the academic report, poster and presentation, add the required GitHub collaborators later as agreed, and submit through Blackboard.
-
-## Automatic controls update
-
-The dataset and custom input are now prepared automatically without sequence editing or manual coordinate selection. Team positions are selected from original dataset longitude-extreme records. The main status card displays the current assessment, separate from sidebar execution state. Twenty-seven automated tests pass, including four new behavioral checks covering automatic full-dataset loading/order, replacement of custom values, exact automatic team coordinates, and assessment status preserved during Pause.
-
-Browser verification also passed one-click Dataset Run, Pause/Resume, automatic custom-input replacement without Add, Normal/Suspected/Leak cards, and preservation of the leak assessment during Pause. No removed sequence/location selectors or processed/total progress bar were rendered, and no uncaught browser errors occurred. [Current automatic controls](screenshots/automatic_controls.png).
-
-## Network-wide Arabic/English update
-
-Experiments and Reports tabs were removed. Sidebar availability/failure settings remain usable for required tests. Zone selection and View Zone actions were removed; assessments and plots cover all processed zones, with automatically listed affected locations. Pressure/flow charts are connected lines without points; the cumulative task chart is a step line with integer axes. A single custom row is displayed as numbers with an explanation, without generated trend data.
-
-All 33 automated tests pass, including checks that later normal readings in another zone do not hide earlier leak evidence, all processed zone records remain in order, line specifications do not add point marks, translations preserve source/protocol IDs, and no measurements are fabricated. A 5,000-record pressure chart and 5,000-update two-series counter chart were serialized successfully without exceeding chart row limits.
-
-Browser verification passed removal of the two tabs and manual zone selector, automatic zone identification, Arabic/English switching while paused, preservation of pressure/flow and Resume state across language switches, and map rendering in both languages. No uncaught page errors were observed. Earlier screenshots remain historical records of preceding interfaces.
-
-Additional browser checks confirmed three processed readings from different zones produce the three network-wide line charts, and the layout remains usable at a 390px viewport. Tab contents are now loaded on selection; active Map selection is preserved across language switches without changing the run. Current captures: [Arabic interface](screenshots/arabic_interface.png), [English interface](screenshots/english_interface.png), [network line charts](screenshots/network_lines.png).
+The team must still review academic report/poster/presentation drafts, document its own three manual cases including team failure, add the agreed collaborators later and submit through Blackboard. No invitations or submission were performed automatically.

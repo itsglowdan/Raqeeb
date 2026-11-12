@@ -4,29 +4,29 @@
     "record_ref": "CSV-00001",
     "status": "Completed",
     "assessment": "Normal",
-    "messages": 7,
+    "messages": 4,
     "reports": 1,
     "events": 0,
-    "steps": 7
+    "steps": 4
   },
   {
     "name": "dual_anomaly",
     "record_ref": "CSV-00029",
     "status": "Completed",
     "assessment": "Leak indicated",
-    "messages": 18,
+    "messages": 13,
     "reports": 2,
     "events": 0,
-    "steps": 19
+    "steps": 14
   },
   {
-    "name": "reporting_failure",
+    "name": "team_failure",
     "record_ref": "CSV-00029",
-    "status": "Failed",
+    "status": "Completed",
     "assessment": "Leak indicated",
-    "messages": 22,
-    "reports": 0,
-    "events": 8,
-    "steps": 57
+    "messages": 19,
+    "reports": 2,
+    "events": 1,
+    "steps": 21
   }
 ]

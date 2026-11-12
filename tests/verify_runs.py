@@ -11,9 +11,9 @@ def main():
     frame = load_data()
     normal = frame[(frame.Pressure_PSI >= 54)&(frame.Flow_Rate_Lmin <= 90)].iloc[0].to_dict()
     anomaly = frame[(frame.Pressure_PSI > 40)&(frame.Pressure_PSI < 54)&(frame.Flow_Rate_Lmin > 90)].iloc[0].to_dict()
-    cases = [('normal', normal, Configuration(), 'Normal; one acknowledged outcome report'),
+    cases = [('normal', normal, Configuration(), 'Normal; one locally recorded outcome'),
              ('dual_anomaly', anomaly, Configuration(), 'Dual-rule assessment; closest configured team completes simulated task'),
-             ('reporting_failure', anomaly, Configuration(reporting_unavailable=True), 'Refusal, one retry per report task, explicit reporting failure')]
+             ('team_failure', anomaly, Configuration(fail_team_a=True), 'Team A fails on assignment; Dispatch reassigns to Team B')]
     destination = Path(__file__).resolve().parents[1]/'docs'/'verification'
     destination.mkdir(exist_ok=True)
     results = []
@@ -26,7 +26,9 @@ def main():
             system.tick()
             if system.status in ['Completed', 'Failed']:
                 break
-        assert system.status == ('Failed' if name == 'reporting_failure' else 'Completed')
+        assert system.status == 'Completed'
+        if name == 'team_failure':
+            assert system.assigned == 'Team B' and any(e['type']=='team_failure' for e in system.events)
         (destination/f'{name}.json').write_text(json.dumps(system.export(), indent=2))
         results.append({'name': name, 'record_ref': reading['record_ref'], 'status': system.status,
                         'assessment': system.assessments[0]['assessment'], 'messages': len(system.bus.log),

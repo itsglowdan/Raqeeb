@@ -17,6 +17,11 @@ st.set_page_config(page_title='Raqeeb | رقيب',page_icon='💧',layout='wide'
 for key,value in {'language':'ar','run':None,'configuration':asdict(Configuration()),'last_tick':0.0}.items():
     if key not in st.session_state:
         st.session_state[key]=value
+allowed_config=asdict(Configuration())
+st.session_state.configuration={key:st.session_state.configuration.get(key,value) for key,value in allowed_config.items()}
+if st.session_state.run and any(name in st.session_state.run.agents for name in ['Reading Agent','Reporting Agent']):
+    st.session_state.run=None
+
 with st.sidebar:
     st.selectbox('اللغة / Language',['ar','en'],format_func=lambda code:'العربية' if code=='ar' else 'English',key='language')
 language=st.session_state.language
@@ -56,17 +61,14 @@ with st.sidebar:
         cfg['pressure_limit']=st.number_input(t('Low pressure below (PSI)'),1.0,200.0,float(cfg['pressure_limit']),key='pressure_limit',disabled=locked)
         cfg['flow_limit']=st.number_input(t('High flow above (L/min)'),1.0,300.0,float(cfg['flow_limit']),key='flow_limit',disabled=locked)
         cfg['major_limit']=st.number_input(t('Major pressure at or below (PSI)'),.1,199.0,float(cfg['major_limit']),key='major_limit',disabled=locked)
-        cfg['timeout_steps']=st.number_input(t('Report timeout (execution steps)'),4,100,int(cfg['timeout_steps']),key='timeout_steps',disabled=locked)
-        cfg['retries']=st.number_input(t('Maximum report retries'),0,5,int(cfg['retries']),key='retries',disabled=locked)
         cfg['team_steps']=st.number_input(t('Simulated team task (steps)'),1,30,int(cfg['team_steps']),key='team_steps',disabled=locked)
         cfg['playback_interval']=st.slider(t('Playback interval (seconds)'),.5,5.0,float(cfg['playback_interval']),.5,key='playback_interval',disabled=locked)
     with st.expander(t('Team conditions')):
         for key,label in [('team_a_available','Team A available'),('team_b_available','Team B available'),
-                          ('fail_team_a','Fail Team A after assignment'),('reporting_unavailable','Reporting Agent unavailable'),
-                          ('reporting_silent','Drop Reporting Agent acknowledgments')]:
+                          ('fail_team_a','Fail Team A after assignment')]:
             cfg[key]=st.checkbox(t(label),value=cfg[key],key=key,disabled=locked)
         if run:
-            for name in ['Team A','Team B','Reporting Agent']:
+            for name in ['Team A','Team B']:
                 if st.button(t('Restore agent')+' · '+t(name),key='restore_'+name,disabled=run.status not in ['Paused','Running']):
                     run.restore(name)
                     st.rerun()
@@ -100,128 +102,130 @@ with st.sidebar:
         st.rerun()
 
 
-@st.fragment(run_every=.5 if run and run.status=='Running' else None)
-def heartbeat():
-    active=st.session_state.run
-    if active and active.status=='Running' and time.monotonic()-st.session_state.last_tick>=active.config.playback_interval:
-        active.tick()
-        st.session_state.last_tick=time.monotonic()
-        st.rerun()
-
-
-heartbeat()
 st.markdown(f'<div class="raqeeb-header"><div><small>{t("Water network monitoring")}</small><h1>Raqeeb | رقيب</h1><p>{t("Riyadh water network · Simulation")}</p></div></div>',unsafe_allow_html=True)
-status,color,issues=network_summary(run)
-st.markdown(f'<div class="raqeeb-status {color}"><h3>{t(status)}</h3></div>',unsafe_allow_html=True)
-if issues:
-    zones=sorted({item['Zone'] for item in issues})
-    st.warning(t('Affected zones')+': '+', '.join(zones))
-    with st.expander(t('Detected locations'),expanded=True):
-        table(pd.DataFrame(issues)[['record_ref','Zone','Block','Pipe','assessment','reason']],language)
-    st.caption(t('Rule assessments, not physical leak confirmation.'))
-a,b,c=st.columns(3)
-a.metric(t('Readings read'),run.cursor if run else 0)
-b.metric(t('Leak assessments'),sum(a['assessment']=='Leak indicated' for a in run.assessments) if run else 0)
-c.metric(t('Simulated tasks completed'),sum('Simulated task completed' in a['outcome'] for a in run.outcomes) if run else 0)
 
-st.subheader(t('Live agents'))
-roles=['Pressure Monitor','Usage Monitor','Leak Locator','Dispatch','Team A','Team B']
-latest=max(run.agents.values(),key=lambda a:a.last_activity or '').name if locked and run.bus.log else None
-st.markdown('<div class="agent-flow">'+'<span class="flow-arrow">→</span>'.join(f'<span class="flow-node {"working" if name==latest else ""}">{t(name)}</span>' for name in roles)+'</div>',unsafe_allow_html=True)
-for start in range(0,len(roles),3):
-    for column,name in zip(st.columns(3),roles[start:start+3]):
-        agent=run.agents[name] if run else None
-        state=t(agent.state if agent else 'Standing by')
-        action=t(agent.action if agent else 'No activity yet')
-        column.markdown(f'<div class="agent-card {"working" if name==latest else ""}"><div class="agent-card-title"><span class="agent-dot"></span><strong>{t(name)}</strong></div><div class="agent-state">{escape(state)}</div><small>{escape(action)}</small></div>',unsafe_allow_html=True)
-if run:
-    with st.expander(t('Supporting agents')):
-        table(pd.DataFrame([{'agent':name,'state':run.agents[name].state,'action':run.agents[name].action} for name in ['Reading Agent','Reporting Agent']]),language)
-    for message in run.bus.log[-3:]:
-        st.markdown(f"**{t(message['sender'])} → {t(message['receiver'])}** · {message['performative']} · {message['record_ref']}")
-    if run.waiting_approval:
-        st.warning(t('Major leak assessment · Supervisor approval required for simulated dispatch.'))
-        a,b=st.columns(2)
-        if a.button(t('Approve dispatch'),disabled=not locked):
-            run.approve(True)
-            st.rerun()
-        if b.button(t('Reject dispatch'),disabled=not locked):
-            run.approve(False)
-            st.rerun()
 
-st.divider()
-st.subheader(t('Monitoring · All zones'))
-plots,counters=st.tabs([t('Pressure & flow'),t('System counters')])
-with plots:
-    observed=observed_readings(run)
-    if observed.empty:
-        st.info(t('No readings yet.'))
-    elif len(observed)==1:
-        st.info(t('Only one reading is available. Values are shown below; a trend needs at least two readings.'))
-        a,b=st.columns(2)
-        a.metric(t('Pressure (PSI)'),f"{observed.iloc[0].Pressure_PSI:.2f}")
-        b.metric(t('Flow (L/min)'),f"{observed.iloc[0].Flow_Rate_Lmin:.2f}")
-    else:
-        for column,field,label,limit in zip(st.columns(2),['Pressure_PSI','Flow_Rate_Lmin'],['Pressure (PSI)','Flow (L/min)'],[run.config.pressure_limit,run.config.flow_limit]):
-            column.altair_chart(line_chart(observed,field,t(label),limit,language),width='stretch')
-        st.caption(t('Lines follow processed records across all zones; the axis is reading order, not measurement time.'))
-    history=outcome_history(run)
-    if not history.empty:
-        st.markdown('**'+t('Leak assessments and simulated task completions')+'**')
-        fields=[t('Leak assessments'),t('Simulated tasks completed')]
-        frame=history.rename(columns={'leaks':fields[0],'completed':fields[1]})
-        chart=alt.Chart(frame).transform_fold(fields,as_=['Series','Count']).mark_line(interpolate='step-after',strokeWidth=2.5).encode(
-            x=alt.X('step:Q',title=t('Execution step'),axis=alt.Axis(tickMinStep=1,format='d')),
-            y=alt.Y('Count:Q',title=t('Count'),axis=alt.Axis(tickMinStep=1,format='d')),
-            color=alt.Color('Series:N',title=t('Series'),legend=alt.Legend(orient='bottom',title=None,labelLimit=400),scale=alt.Scale(range=['#19A7A0','#1466C3'])),tooltip=[alt.Tooltip('step:Q',title=t('Execution step')),alt.Tooltip('Series:N',title=t('Series')),alt.Tooltip('Count:Q',title=t('Count'))]).properties(height=230)
-        st.altair_chart(chart,width='stretch')
-with counters:
-    for column,key,label in zip(st.columns(3),[None,'team_failure','execution_error'],['Messages sent','Team failures','Execution errors']):
-        column.metric(t(label),len(run.bus.log) if run and key is None else sum(e['type']==key for e in run.events) if run else 0)
+@st.fragment(run_every=.5 if run and run.status=='Running' else None)
+def dynamic_view():
+    run=st.session_state.run
+    was_running=bool(run and run.status=='Running')
+    if was_running and time.monotonic()-st.session_state.last_tick>=run.config.playback_interval:
+        run.tick()
+        st.session_state.last_tick=time.monotonic()
+    if was_running and run.status!='Running':
+        st.rerun()
+    locked=bool(run and run.status=='Running')
+    status,color,issues=network_summary(run)
+    st.markdown(f'<div class="raqeeb-status {color}"><h3>{t(status)}</h3></div>',unsafe_allow_html=True)
+    if issues:
+        zones=sorted({item['Zone'] for item in issues})
+        st.warning(t('Affected districts')+': '+', '.join(zones))
+        with st.expander(t('Detected locations'),expanded=True):
+            table(pd.DataFrame(issues)[['record_ref','Zone','Block','Pipe','assessment','reason']],language)
+        st.caption(t('Rule assessments, not physical leak confirmation.'))
+    a,b,c=st.columns(3)
+    a.metric(t('Readings read'),run.cursor if run else 0)
+    b.metric(t('Leak assessments'),sum(a['assessment']=='Leak indicated' for a in run.assessments) if run else 0)
+    c.metric(t('Simulated tasks completed'),sum('Simulated task completed' in a['outcome'] for a in run.outcomes) if run else 0)
 
-detail_names=['Message log','Incidents','Dataset evaluation','Readings','Map']
-detail_key='details_'+language
-if detail_key not in st.session_state or st.session_state.get('last_ui_language')!=language:
-    st.session_state[detail_key]=t(st.session_state.get('active_detail','Message log'))
-st.session_state.last_ui_language=language
-detail_tabs=st.tabs([t(name) for name in detail_names],key=detail_key,on_change='rerun')
-logs,incidents,evaluation,readings,map_tab=detail_tabs
-for name,tab in zip(detail_names,detail_tabs):
-    if tab.open:
-        st.session_state.active_detail=name
-with logs:
-    if logs.open:
-        if run and run.bus.log:
-            table(pd.DataFrame([{**m,'content':json.dumps(m['content'],ensure_ascii=False)} for m in run.bus.log]),language)
-            st.download_button(t('Download message log'),json.dumps(run.bus.log,indent=2),file_name='raqeeb_messages.json',mime='application/json',on_click='ignore')
+    st.subheader(t('Live agents'))
+    roles=['Pressure Monitor','Usage Monitor','Leak Locator','Dispatch','Team A','Team B']
+    latest=max(run.agents.values(),key=lambda a:a.last_activity or '').name if locked and run.bus.log else None
+    st.markdown('<div class="agent-flow">'+'<span class="flow-arrow">→</span>'.join(f'<span class="flow-node {"working" if name==latest else ""}">{t(name)}</span>' for name in roles)+'</div>',unsafe_allow_html=True)
+    for start in range(0,len(roles),3):
+        for column,name in zip(st.columns(3),roles[start:start+3]):
+            agent=run.agents[name] if run else None
+            state=t(agent.state if agent else 'Standing by')
+            action=t(agent.action if agent else 'No activity yet')
+            column.markdown(f'<div class="agent-card {"working" if name==latest else ""}"><div class="agent-card-title"><span class="agent-dot"></span><strong>{t(name)}</strong></div><div class="agent-state">{escape(state)}</div><small>{escape(action)}</small></div>',unsafe_allow_html=True)
+    if run:
+        for message in run.bus.log[-3:]:
+            st.markdown(f"**{t(message['sender'])} → {t(message['receiver'])}** · {message['performative']} · {message['record_ref']}")
+        if run.waiting_approval:
+            st.warning(t('Major leak assessment · Supervisor approval required for simulated dispatch.'))
+            a,b=st.columns(2)
+            if a.button(t('Approve dispatch'),disabled=not locked):
+                run.approve(True)
+                st.rerun()
+            if b.button(t('Reject dispatch'),disabled=not locked):
+                run.approve(False)
+                st.rerun()
+
+    st.divider()
+    st.subheader(t('Monitoring · All districts'))
+    plots,counters=st.tabs([t('Pressure & flow'),t('System counters')])
+    with plots:
+        observed=observed_readings(run)
+        if observed.empty:
+            st.info(t('No readings yet.'))
+        elif len(observed)==1:
+            st.info(t('Only one reading is available. Values are shown below; a trend needs at least two readings.'))
+            a,b=st.columns(2)
+            a.metric(t('Pressure (PSI)'),f"{observed.iloc[0].Pressure_PSI:.2f}")
+            b.metric(t('Flow (L/min)'),f"{observed.iloc[0].Flow_Rate_Lmin:.2f}")
         else:
-            st.info(t('Press Run to start.'))
-with incidents:
-    if incidents.open:
-        if issues:
-            outcomes={o['record_ref']:o['outcome'] for o in run.outcomes}
-            table(pd.DataFrame([{**a,'outcome':outcomes.get(a['record_ref'],'Checking')} for a in issues]),language)
-        else:
-            st.info(t('No outcomes yet.'))
-with evaluation:
-    if evaluation.open:
-        scores=evaluate(data,*( (run.config.pressure_limit,run.config.flow_limit) if run else (cfg['pressure_limit'],cfg['flow_limit']) ))
-        for column,key in zip(st.columns(4),['accuracy','precision','recall','f1']):
-            column.metric(t(key.title()),f'{scores[key]:.2%}')
-        st.caption(t('Rule agreement with dataset labels; labels are not used by detection agents.'))
-with readings:
-    if readings.open:
-        table(data,language)
-with map_tab:
-    if map_tab.open:
-        geographic(data,data,run,language)
-st.divider()
-st.subheader(t('Riyadh overview'))
-st.caption(t('All dataset zones · no manual zone selection'))
-summary=[]
-for zone in sorted(data.Zone.unique()):
-    refs={r['record_ref'] for r in run.readings if r['Zone']==zone} if run else set()
-    results=[a for a in run.assessments if a['record_ref'] in refs] if run else []
-    summary.append({'Zone':zone,'normal':sum(a['assessment']=='Normal' for a in results),
-                    'suspected':sum(a['assessment']=='Suspected' for a in results),'leaks':sum(a['assessment']=='Leak indicated' for a in results)})
-table(pd.DataFrame(summary),language)
+            for column,field,label,limit in zip(st.columns(2),['Pressure_PSI','Flow_Rate_Lmin'],['Pressure (PSI)','Flow (L/min)'],[run.config.pressure_limit,run.config.flow_limit]):
+                column.altair_chart(line_chart(observed,field,t(label),limit,language),width='stretch')
+            st.caption(t('Lines follow processed records across all districts; the axis is reading order, not measurement time.'))
+        history=outcome_history(run)
+        if not history.empty:
+            st.markdown('**'+t('Leak assessments and simulated task completions')+'**')
+            fields=[t('Leak assessments'),t('Simulated tasks completed')]
+            frame=history.rename(columns={'leaks':fields[0],'completed':fields[1]})
+            chart=alt.Chart(frame).transform_fold(fields,as_=['Series','Count']).mark_line(interpolate='step-after',strokeWidth=2.5).encode(
+                x=alt.X('step:Q',title=t('Execution step'),axis=alt.Axis(tickMinStep=1,format='d')),
+                y=alt.Y('Count:Q',title=t('Count'),axis=alt.Axis(tickMinStep=1,format='d')),
+                color=alt.Color('Series:N',title=t('Series'),legend=alt.Legend(orient='bottom',title=None,labelLimit=400),scale=alt.Scale(range=['#19A7A0','#1466C3'])),tooltip=[alt.Tooltip('step:Q',title=t('Execution step')),alt.Tooltip('Series:N',title=t('Series')),alt.Tooltip('Count:Q',title=t('Count'))]).properties(height=230)
+            st.altair_chart(chart,width='stretch')
+    with counters:
+        for column,key,label in zip(st.columns(3),[None,'team_failure','execution_error'],['Messages sent','Team failures','Execution errors']):
+            column.metric(t(label),len(run.bus.log) if run and key is None else sum(e['type']==key for e in run.events) if run else 0)
+
+    detail_names=['Message log','Incidents','Dataset evaluation','Readings','Map']
+    detail_key='details_'+language
+    if detail_key not in st.session_state or st.session_state.get('last_ui_language')!=language:
+        st.session_state[detail_key]=t(st.session_state.get('active_detail','Message log'))
+    st.session_state.last_ui_language=language
+    detail_tabs=st.tabs([t(name) for name in detail_names],key=detail_key,on_change='rerun')
+    logs,incidents,evaluation,readings,map_tab=detail_tabs
+    for name,tab in zip(detail_names,detail_tabs):
+        if tab.open:
+            st.session_state.active_detail=name
+    with logs:
+        if logs.open:
+            if run and run.bus.log:
+                table(pd.DataFrame([{**m,'content':json.dumps(m['content'],ensure_ascii=False)} for m in run.bus.log]),language)
+                st.download_button(t('Download message log'),json.dumps(run.bus.log,indent=2),file_name='raqeeb_messages.json',mime='application/json',on_click='ignore')
+            else:
+                st.info(t('Press Run to start.'))
+    with incidents:
+        if incidents.open:
+            if issues:
+                outcomes={o['record_ref']:o['outcome'] for o in run.outcomes}
+                table(pd.DataFrame([{**a,'outcome':outcomes.get(a['record_ref'],'Checking')} for a in issues]),language)
+            else:
+                st.info(t('No outcomes yet.'))
+    with evaluation:
+        if evaluation.open:
+            scores=evaluate(data,*( (run.config.pressure_limit,run.config.flow_limit) if run else (cfg['pressure_limit'],cfg['flow_limit']) ))
+            for column,key in zip(st.columns(4),['accuracy','precision','recall','f1']):
+                column.metric(t(key.title()),f'{scores[key]:.2%}')
+            st.caption(t('Rule agreement with dataset labels; labels are not used by detection agents.'))
+    with readings:
+        if readings.open:
+            table(data,language)
+    with map_tab:
+        if map_tab.open:
+            geographic(data,data,run,language)
+    st.divider()
+    st.subheader(t('Riyadh overview'))
+    st.caption(t('All dataset districts · automatic issue detection'))
+    summary=[]
+    for zone in sorted(data.Zone.unique()):
+        refs={r['record_ref'] for r in run.readings if r['Zone']==zone} if run else set()
+        results=[a for a in run.assessments if a['record_ref'] in refs] if run else []
+        summary.append({'Zone':zone,'normal':sum(a['assessment']=='Normal' for a in results),
+                        'suspected':sum(a['assessment']=='Suspected' for a in results),'leaks':sum(a['assessment']=='Leak indicated' for a in results)})
+    table(pd.DataFrame(summary),language)
+
+dynamic_view()

@@ -1,6 +1,6 @@
 import unittest
 from copy import deepcopy
-from data_loader import load_data, validate_reading, custom_reading, filter_data, summarize
+from data_loader import load_data, validate_reading, custom_reading, filter_data, summarize, LABELS
 from simulation import Simulation, Configuration, evaluate
 
 DATA = load_data()
@@ -52,6 +52,11 @@ class DataTests(unittest.TestCase):
         self.assertEqual(custom['coordinate_reference'], reference['record_ref'])
         self.assertEqual(custom['Latitude'], reference['Latitude'])
         self.assertEqual(custom['Longitude'], reference['Longitude'])
+
+    def test_display_names_do_not_rename_source_columns(self):
+        self.assertEqual([LABELS[key] for key in ['Zone','Block','Pipe']],['District','Section','Pipeline'])
+        self.assertTrue({'Zone','Block','Pipe'}.issubset(DATA.columns))
+        self.assertFalse({'District','Section','Pipeline'} & set(DATA.columns))
 
     def test_invalid_measurements(self):
         for value in [float('nan'), float('inf'), -1, None, 'bad']:
@@ -140,48 +145,36 @@ class AgentTests(unittest.TestCase):
         self.assertIn('unresolved', system.outcomes[0]['outcome'])
         self.assertFalse(any(m['performative'] == 'ACCEPT' for m in system.bus.log))
 
-    def test_reporting_refusal_bounded(self):
-        system = finish(Simulation([row()], Configuration(reporting_unavailable=True, timeout_steps=6, retries=2)))
-        self.assertEqual(len([m for m in system.bus.log if m['receiver'] == 'Reporting Agent']), 3)
-        self.assertEqual(system.status, 'Failed')
-        self.assertEqual(len(system.reports), 0)
-        self.assertTrue(any(e['type'] == 'report_failed' for e in system.events))
-
-    def test_silent_timeout_bounded(self):
-        system = finish(Simulation([row()], Configuration(reporting_silent=True, timeout_steps=5, retries=1)))
-        self.assertEqual(system.status, 'Failed')
-        self.assertEqual(sum(e['type'] == 'report_retry' for e in system.events), 1)
-
-    def test_restore_before_retry(self):
-        system = Simulation([row()], Configuration(reporting_unavailable=True, timeout_steps=10))
-        system.run()
-        for _ in range(8):
-            system.tick()
-        system.pause()
-        system.restore('Reporting Agent')
-        finish(system)
-        self.assertEqual(system.status, 'Completed')
-        self.assertEqual(len(system.reports), 1)
-
-    def test_restore_lost_ack_without_duplicate_report(self):
-        system = Simulation([row()], Configuration(reporting_silent=True, timeout_steps=12))
-        system.run()
-        for _ in range(8):
-            system.tick()
-        self.assertEqual(len(system.reports), 1)
-        system.pause()
-        system.restore('Reporting Agent')
-        finish(system)
-        self.assertEqual(system.status, 'Completed')
-        self.assertEqual(len(system.reports), 1)
 
     def test_duplicate_record_refs_rejected(self):
         with self.assertRaises(ValueError):
             Simulation([row(), row()])
 
-    def test_idempotent_reporting(self):
-        system = finish(Simulation([row(50, 110)], Configuration(timeout_steps=1, retries=5)))
-        self.assertEqual(len({r['task_ref'] for r in system.reports}), len(system.reports))
+
+    def test_only_approved_agent_roles_and_plain_validation_logging(self):
+        system = finish(Simulation([row(50,110)]))
+        self.assertEqual(set(system.agents), {'Pressure Monitor','Usage Monitor','Leak Locator','Dispatch','Team A','Team B'})
+        self.assertTrue(system.reports)
+        for message in system.bus.log:
+            self.assertNotIn(message['sender'], ['Reading Agent','Reporting Agent'])
+            self.assertNotIn(message['receiver'], ['Reading Agent','Reporting Agent'])
+            self.assertNotIn('Leakage_Flag', str(message['content']))
+        self.assertEqual(len({r['task_ref'] for r in system.reports}),len(system.reports))
+        self.assertEqual(system.reports[-1]['record_ref'],system.readings[0]['record_ref'])
+
+    def test_restore_failed_team_after_reassignment(self):
+        system = Simulation([row(50,110)], Configuration(fail_team_a=True))
+        system.run()
+        while not system.agents['Team A'].failure:
+            system.tick()
+        system.pause()
+        system.restore('Team A')
+        self.assertIsNone(system.agents['Team A'].failure)
+        self.assertTrue(system.agents['Team A'].available)
+        self.assertEqual(system.status,'Paused')
+        finish(system)
+        self.assertEqual(sum(e['type']=='team_failure' for e in system.events),1)
+        self.assertEqual(system.status,'Completed')
 
     def test_invalid_runtime_explicit(self):
         reading = row()
@@ -200,7 +193,7 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(reading, original)
 
     def test_configuration_effect(self):
-        for config in [dict(major_limit=60), dict(retries=-1), dict(timeout_steps=0), dict(flow_limit=float('nan'))]:
+        for config in [dict(major_limit=60), dict(team_steps=0), dict(playback_interval=0), dict(flow_limit=float('nan'))]:
             with self.assertRaises(ValueError):
                 Configuration(**config)
         system = finish(Simulation([row(65, 80)], Configuration(pressure_limit=70, flow_limit=75)))

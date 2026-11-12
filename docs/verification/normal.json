@@ -1,23 +1,19 @@
 {
-  "run_id": "5b254e6090f8",
+  "run_id": "b823ed32f0dc",
   "metadata": {
     "name": "normal",
     "purpose": "Technical development verification, not a user-submitted experiment",
-    "expected_outcome": "Normal; one acknowledged outcome report"
+    "expected_outcome": "Normal; one locally recorded outcome"
   },
   "configuration": {
     "pressure_limit": 54.0,
     "flow_limit": 90.0,
     "major_limit": 40.0,
-    "timeout_steps": 20,
-    "retries": 1,
     "team_steps": 4,
     "playback_interval": 0.5,
     "team_a_available": true,
     "team_b_available": true,
-    "fail_team_a": false,
-    "reporting_unavailable": false,
-    "reporting_silent": false
+    "fail_team_a": false
   },
   "team_coordinate_references": {
     "Team A": {
@@ -36,10 +32,10 @@
     }
   },
   "status": "Completed",
-  "step": 7,
-  "created_at_runtime": "2026-11-12T14:52:15.717+00:00",
-  "started_at_runtime": "2026-11-12T14:52:15.717+00:00",
-  "finished_at_runtime": "2026-11-12T14:52:15.718+00:00",
+  "step": 4,
+  "created_at_runtime": "2026-11-12T16:46:04.360+00:00",
+  "started_at_runtime": "2026-11-12T16:46:04.361+00:00",
+  "finished_at_runtime": "2026-11-12T16:46:04.361+00:00",
   "inputs": [
     {
       "record_ref": "CSV-00001",
@@ -63,16 +59,16 @@
       "reason": "Neither detection threshold crossed",
       "pressure_low": false,
       "flow_high": false,
-      "step": 4,
+      "step": 3,
       "source": "Dataset Readings"
     }
   ],
   "reports": [
     {
-      "task_ref": "5b254e6090f8-R1",
+      "task_ref": "b823ed32f0dc-R1",
       "record_ref": "CSV-00001",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
+      "conversation_id": "b823ed32f0dc:CSV-00001",
+      "runtime_timestamp": "2026-11-12T16:46:04.361+00:00",
       "outcome": "Normal",
       "assessment": {
         "record_ref": "CSV-00001",
@@ -80,7 +76,7 @@
         "reason": "Neither detection threshold crossed",
         "pressure_low": false,
         "flow_high": false,
-        "step": 4,
+        "step": 3,
         "source": "Dataset Readings"
       },
       "location": null,
@@ -91,42 +87,14 @@
     {
       "record_ref": "CSV-00001",
       "outcome": "Normal",
-      "step": 5
+      "step": 4
     }
   ],
   "events": [],
   "messages": [
     {
-      "message_id": "5b254e6090f8-M000001",
+      "message_id": "b823ed32f0dc-M000001",
       "sender": "Environment",
-      "receiver": "Reading Agent",
-      "performative": "REQUEST",
-      "content": {
-        "reading": {
-          "record_ref": "CSV-00001",
-          "original_index": 1,
-          "Pressure_PSI": 64.96714153011233,
-          "Flow_Rate_Lmin": 73.64360476965945,
-          "Vibration_mms": 2.928288391770536,
-          "Zone": "Zone_4",
-          "Block": "Block_2",
-          "Pipe": "Pipe_3",
-          "Location_Code": "Zone_4_Block_2_Pipe_3",
-          "Latitude": 24.692188,
-          "Longitude": 46.664467,
-          "Leakage_Flag": 0
-        }
-      },
-      "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 1,
-      "runtime_timestamp": "2026-11-12T14:52:15.717+00:00",
-      "record_ref": "CSV-00001",
-      "task_ref": null
-    },
-    {
-      "message_id": "5b254e6090f8-M000002",
-      "sender": "Reading Agent",
       "receiver": "Pressure Monitor",
       "performative": "REQUEST",
       "content": {
@@ -145,14 +113,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
+      "conversation_id": "b823ed32f0dc:CSV-00001",
       "step": 1,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
+      "runtime_timestamp": "2026-11-12T16:46:04.361+00:00",
       "record_ref": "CSV-00001",
       "task_ref": null
     },
     {
-      "message_id": "5b254e6090f8-M000003",
+      "message_id": "b823ed32f0dc-M000002",
       "sender": "Pressure Monitor",
       "receiver": "Usage Monitor",
       "performative": "REQUEST",
@@ -173,14 +141,14 @@
         "pressure_low": false
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 2,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
+      "conversation_id": "b823ed32f0dc:CSV-00001",
+      "step": 1,
+      "runtime_timestamp": "2026-11-12T16:46:04.361+00:00",
       "record_ref": "CSV-00001",
       "task_ref": null
     },
     {
-      "message_id": "5b254e6090f8-M000004",
+      "message_id": "b823ed32f0dc-M000003",
       "sender": "Usage Monitor",
       "receiver": "Pressure Monitor",
       "performative": "INFORM",
@@ -202,14 +170,14 @@
         "flow_high": false
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 3,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
+      "conversation_id": "b823ed32f0dc:CSV-00001",
+      "step": 2,
+      "runtime_timestamp": "2026-11-12T16:46:04.361+00:00",
       "record_ref": "CSV-00001",
       "task_ref": null
     },
     {
-      "message_id": "5b254e6090f8-M000005",
+      "message_id": "b823ed32f0dc-M000004",
       "sender": "Pressure Monitor",
       "receiver": "Dispatch",
       "performative": "INFORM",
@@ -220,7 +188,7 @@
           "reason": "Neither detection threshold crossed",
           "pressure_low": false,
           "flow_high": false,
-          "step": 4,
+          "step": 3,
           "source": "Dataset Readings"
         },
         "reading": {
@@ -238,52 +206,11 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 4,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
+      "conversation_id": "b823ed32f0dc:CSV-00001",
+      "step": 3,
+      "runtime_timestamp": "2026-11-12T16:46:04.361+00:00",
       "record_ref": "CSV-00001",
       "task_ref": null
-    },
-    {
-      "message_id": "5b254e6090f8-M000006",
-      "sender": "Dispatch",
-      "receiver": "Reporting Agent",
-      "performative": "REQUEST",
-      "content": {
-        "outcome": "Normal",
-        "assessment": {
-          "record_ref": "CSV-00001",
-          "assessment": "Normal",
-          "reason": "Neither detection threshold crossed",
-          "pressure_low": false,
-          "flow_high": false,
-          "step": 4,
-          "source": "Dataset Readings"
-        },
-        "location": null,
-        "source": "Dataset Readings"
-      },
-      "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 5,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
-      "record_ref": "CSV-00001",
-      "task_ref": "5b254e6090f8-R1"
-    },
-    {
-      "message_id": "5b254e6090f8-M000007",
-      "sender": "Reporting Agent",
-      "receiver": "Dispatch",
-      "performative": "INFORM",
-      "content": {
-        "state": "recorded"
-      },
-      "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "5b254e6090f8:CSV-00001",
-      "step": 6,
-      "runtime_timestamp": "2026-11-12T14:52:15.718+00:00",
-      "record_ref": "CSV-00001",
-      "task_ref": "5b254e6090f8-R1"
     }
   ]
 }

@@ -2,7 +2,8 @@ from dataclasses import dataclass, asdict
 from copy import deepcopy
 from uuid import uuid4
 import math
-from agents import ReadingAgent, PressureMonitor, UsageMonitor, LeakLocator, Dispatch, RepairTeam, ReportingAgent
+from agents import PressureMonitor, UsageMonitor, LeakLocator, Dispatch, RepairTeam
+from data_loader import validate_reading
 from protocol import MessageBus, utc_now
 
 
@@ -11,15 +12,11 @@ class Configuration:
     pressure_limit: float = 54.0
     flow_limit: float = 90.0
     major_limit: float = 40.0
-    timeout_steps: int = 20
-    retries: int = 1
     team_steps: int = 4
     playback_interval: float = 0.5
     team_a_available: bool = True
     team_b_available: bool = True
     fail_team_a: bool = False
-    reporting_unavailable: bool = False
-    reporting_silent: bool = False
 
     def __post_init__(self):
         for key in ['pressure_limit', 'flow_limit', 'major_limit', 'playback_interval']:
@@ -27,11 +24,10 @@ class Configuration:
                 raise ValueError(f'{key} must be positive and finite')
         if self.major_limit >= self.pressure_limit:
             raise ValueError('Major pressure limit must be below low-pressure limit')
-        for key in ['timeout_steps', 'team_steps']:
+        for key in ['team_steps']:
             if not isinstance(getattr(self, key), int) or getattr(self, key) < 1:
                 raise ValueError(f'{key} must be a positive integer')
-        if not isinstance(self.retries, int) or not 0 <= self.retries <= 5:
-            raise ValueError('Retries must be an integer from 0 to 5')
+
 
 
 class Simulation:
@@ -51,16 +47,15 @@ class Simulation:
         self.waiting_approval, self.workflow_done, self.had_failure = False, False, False
         self.bus = MessageBus(self.run_id)
         self.assessments, self.reports, self.events, self.outcomes = [], [], [], []
-        self.pending_reports, self.offers = {}, {}
+        self.offers = {}
         self.location_content, self.assigned = {}, None
         self.team_a_fault_consumed = False
         self.positions = deepcopy(team_positions or {
             'Team A': {'record_ref': refs[0], 'position': [self.readings[0]['Latitude'], self.readings[0]['Longitude']]},
             'Team B': {'record_ref': refs[-1], 'position': [self.readings[-1]['Latitude'], self.readings[-1]['Longitude']]}})
         self.agents = {}
-        for name, kind in [('Reading Agent', ReadingAgent), ('Pressure Monitor', PressureMonitor),
-                           ('Usage Monitor', UsageMonitor), ('Leak Locator', LeakLocator), ('Dispatch', Dispatch),
-                           ('Reporting Agent', ReportingAgent)]:
+        for name, kind in [('Pressure Monitor', PressureMonitor), ('Usage Monitor', UsageMonitor),
+                           ('Leak Locator', LeakLocator), ('Dispatch', Dispatch)]:
             self.agents[name] = kind(name, self)
         for name, available in [('Team A', self.config.team_a_available), ('Team B', self.config.team_b_available)]:
             self.agents[name] = RepairTeam(name, self, self.positions[name]['position'], available)
@@ -88,11 +83,9 @@ class Simulation:
 
     def restore(self, name):
         agent = self.agents[name]
-        if isinstance(agent, ReportingAgent):
-            agent.available = True
-            agent.silent = False
-        elif isinstance(agent, RepairTeam):
-            agent.available = True
+        if not isinstance(agent, RepairTeam):
+            raise ValueError('Only maintenance teams can be restored')
+        agent.available = True
         agent.failure = None
         agent.touch('Restored', 'Restored by user; pending work continues on Resume')
         self.events.append({'step': self.step, 'type': 'agent_restored', 'agent': name, 'runtime_timestamp': utc_now()})
@@ -103,32 +96,30 @@ class Simulation:
         for name in ['Team A', 'Team B']:
             self.bus.send('Dispatch', name, 'CFP', self.location_content, self.step, self.current_ref)
 
-    def request_report(self, outcome):
-        task_ref = f'{self.run_id}-R{len(self.reports)+len(self.pending_reports)+len([e for e in self.events if e["type"] == "report_failed"])+1}'
-        content = {'outcome': outcome, 'assessment': deepcopy(self.location_content.get('assessment')),
-                   'location': deepcopy(self.location_content.get('location')),
-                   'source': self.current.get('source', 'Dataset Readings')}
-        self.pending_reports[task_ref] = {'content': content, 'attempts': 1,
-                                          'deadline': self.step + self.config.timeout_steps,
-                                          'record_ref': self.current_ref}
-        self.bus.send('Dispatch', 'Reporting Agent', 'REQUEST', content, self.step, self.current_ref, task_ref)
+    def record_report(self, outcome):
+        task_ref = f'{self.run_id}-R{len(self.reports)+1}'
+        self.reports.append({'task_ref': task_ref, 'record_ref': self.current_ref,
+                             'conversation_id': f'{self.run_id}:{self.current_ref}',
+                             'runtime_timestamp': utc_now(), 'outcome': outcome,
+                             'assessment': deepcopy(self.location_content.get('assessment')),
+                             'location': deepcopy(self.location_content.get('location')),
+                             'source': self.current.get('source', 'Dataset Readings')})
 
-    def report_response(self, message):
-        task = self.pending_reports.get(message.task_ref)
-        if task is None:
+    def deliver_reading(self):
+        try:
+            validate_reading(self.current, labeled=self.current.get('source') != 'Custom simulation input')
+        except ValueError as error:
+            self.events.append({'step': self.step, 'type': 'validation_failure',
+                                'record_ref': self.current_ref, 'reason': str(error)})
+            self.fail_current(str(error))
             return
-        if message.performative == 'INFORM':
-            del self.pending_reports[message.task_ref]
-            self.agents['Dispatch'].touch('Acknowledged', f'Report {message.task_ref} recorded')
-        elif message.performative == 'REFUSE':
-            self.events.append({'step': self.step, 'type': 'report_refused', 'task_ref': message.task_ref,
-                                'record_ref': message.record_ref, 'reason': message.content['reason']})
-            # The deadline provides a bounded delay before retrying.
+        payload = {key: value for key, value in self.current.items() if key != 'Leakage_Flag'}
+        self.bus.send('Environment', 'Pressure Monitor', 'REQUEST', {'reading': payload}, self.step, self.current_ref)
 
     def complete_workflow(self, outcome):
         self.workflow_done = True
         self.outcomes.append({'record_ref': self.current_ref, 'outcome': outcome, 'step': self.step})
-        self.request_report(outcome)
+        self.record_report(outcome)
 
     def fail_current(self, reason):
         self.had_failure = True
@@ -148,7 +139,7 @@ class Simulation:
             self.cursor += 1
             self.workflow_done = False
             self.location_content, self.assigned = {}, None
-            self.bus.send('Environment', 'Reading Agent', 'REQUEST', {'reading': self.current}, self.step, self.current_ref)
+            self.deliver_reading()
         for name in ['Team A', 'Team B']:
             self.agents[name].tick()
         if self.bus.queue:
@@ -161,20 +152,7 @@ class Simulation:
                                     'agent': message.receiver, 'reason': f'{type(error).__name__}: {error}'})
                 self.status, self.finished_at = 'Failed', utc_now()
                 return
-        for task_ref, task in list(self.pending_reports.items()):
-            if self.step >= task['deadline']:
-                if task['attempts'] <= self.config.retries:
-                    task['attempts'] += 1
-                    task['deadline'] = self.step + self.config.timeout_steps
-                    self.events.append({'step': self.step, 'type': 'report_retry', 'task_ref': task_ref,
-                                        'attempt': task['attempts'], 'record_ref': task['record_ref']})
-                    self.bus.send('Dispatch', 'Reporting Agent', 'REQUEST', task['content'], self.step, task['record_ref'], task_ref)
-                else:
-                    self.had_failure = True
-                    self.events.append({'step': self.step, 'type': 'report_failed', 'task_ref': task_ref,
-                                        'record_ref': task['record_ref'], 'reason': 'Acknowledgment deadline exhausted'})
-                    del self.pending_reports[task_ref]
-        if self.workflow_done and not self.pending_reports and not self.bus.queue and not any(self.agents[name].remaining for name in ['Team A', 'Team B']):
+        if self.workflow_done and not self.bus.queue and not any(self.agents[name].remaining for name in ['Team A', 'Team B']):
             self.current = None
             if self.cursor == len(self.readings):
                 self.status = 'Failed' if self.had_failure else 'Completed'

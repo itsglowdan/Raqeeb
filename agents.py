@@ -1,5 +1,4 @@
 from math import asin, cos, radians, sin, sqrt
-from data_loader import validate_reading
 from protocol import utc_now
 
 
@@ -24,24 +23,6 @@ class Agent:
         return self.system.bus.send(self.name, receiver, performative, content, self.system.step,
                                     message.record_ref if message else self.system.current_ref,
                                     task_ref or (message.task_ref if message else None))
-
-
-class ReadingAgent(Agent):
-    role = 'Validate and deliver selected readings'
-
-    def receive(self, message):
-        row = message.content['reading']
-        try:
-            validate_reading(row, labeled=row.get('source') != 'Custom simulation input')
-        except ValueError as error:
-            self.touch('Validation failed', str(error))
-            self.system.events.append({'step': self.system.step, 'type': 'validation_failure', 'record_ref': message.record_ref, 'reason': str(error)})
-            self.system.fail_current(str(error))
-            return
-        self.touch('Delivered', message.record_ref)
-        # Dataset labels never enter the assessment protocol.
-        payload = {key: value for key, value in row.items() if key != 'Leakage_Flag'}
-        self.send('Pressure Monitor', 'REQUEST', {'reading': payload}, message)
 
 
 class PressureMonitor(Agent):
@@ -101,9 +82,7 @@ class Dispatch(Agent):
 
     def receive(self, message):
         system, content = self.system, message.content
-        if message.sender == 'Reporting Agent':
-            system.report_response(message)
-        elif message.sender == 'Supervisor':
+        if message.sender == 'Supervisor':
             system.waiting_approval = False
             if message.performative == 'ACCEPT':
                 self.touch('Approved', 'Supervisor accepted simulated dispatch')
@@ -131,17 +110,19 @@ class Dispatch(Agent):
                 self.touch('Reassigning', f'{message.sender} failed; requesting remaining teams')
                 system.request_teams()
             elif content.get('state') == 'completed':
+                self.touch('Task completed', f'Simulated task completed by {message.sender}')
                 system.complete_workflow(f'Simulated task completed by {message.sender}')
         else:
             system.location_content = content
             if content.get('major'):
                 system.waiting_approval = True
                 self.touch('Waiting approval', 'Major rule assessment; supervisor decision required')
-                system.request_report('Major rule assessment; awaiting supervisor approval')
+                system.record_report('Major rule assessment; awaiting supervisor approval')
             elif content['assessment']['assessment'] == 'Leak indicated':
-                system.request_report('Dual-rule leak assessment; simulated dispatch requested')
+                system.record_report('Dual-rule leak assessment; simulated dispatch requested')
                 system.request_teams()
             else:
+                self.touch(content['assessment']['assessment'], content['assessment']['reason'])
                 system.complete_workflow(content['assessment']['assessment'])
 
 
@@ -187,28 +168,3 @@ class RepairTeam(Agent):
                 self.touch('Task completed', 'Simulated work only')
                 self.send('Dispatch', 'INFORM', {'state': 'completed'}, self.assignment)
 
-
-class ReportingAgent(Agent):
-    role = 'Create idempotent, traceable alert and outcome records'
-
-    def __init__(self, name, system):
-        super().__init__(name, system)
-        self.available = not system.config.reporting_unavailable
-        self.silent = system.config.reporting_silent
-
-    def receive(self, message):
-        if not self.available:
-            self.failure = 'User-configured unavailability'
-            self.touch('Unavailable', self.failure)
-            self.send('Dispatch', 'REFUSE', {'reason': self.failure}, message)
-        else:
-            self.failure = None
-            if not any(row['task_ref'] == message.task_ref for row in self.system.reports):
-                self.system.reports.append({'task_ref': message.task_ref, 'record_ref': message.record_ref,
-                                            'conversation_id': message.conversation_id,
-                                            'runtime_timestamp': utc_now(), **message.content})
-            if self.silent:
-                self.touch('Acknowledgment withheld', 'Report stored; user-configured acknowledgment loss')
-            else:
-                self.touch('Report created', message.task_ref)
-                self.send('Dispatch', 'INFORM', {'state': 'recorded'}, message)

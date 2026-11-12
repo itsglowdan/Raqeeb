@@ -1,91 +1,78 @@
 # Model design
 
-## Architecture
+## Approved architecture
 
-The supplied Phase 1 architecture is retained. Reading and Reporting agents are supporting infrastructure rather than a replacement four-agent design. Two Repair Team instances represent the approved Repair Team role. No task claims a physical intervention.
+Raqeeb implements the five Phase 1 agent roles. Pressure Monitor, Usage Monitor, Leak Locator and Dispatch each have one instance; Repair Team has two instances (A/B). There are six instances of five roles. Reading validation and result recording are ordinary `Simulation.deliver_reading` and `Simulation.record_report` functions, not independent agents. No Reading Agent or Reporting Agent is instantiated or exchanges messages.
 
 ```mermaid
 flowchart LR
- E[Selected dataset/custom sequence] --> R[Reading Agent]
- R --> P[Pressure Monitor]
- P -->|REQUEST verification| U[Usage Monitor]
- U -->|INFORM flow result| P
- P -->|dual rule REQUEST| L[Leak Locator]
+ E[Environment: validate reading and remove label] -->|REQUEST| P[Pressure Monitor]
+ P -->|REQUEST independent verification| U[Usage Monitor]
+ U -->|INFORM flow check| P
+ P -->|dual anomaly REQUEST| L[Leak Locator]
  P -->|normal/suspected INFORM| D[Dispatch]
- L --> D
+ L -->|REQUEST exact location| D
  S[Supervisor] <-->|major approval| D
- D <-->|CFP / PROPOSE / ACCEPT / REFUSE| T[Team A and Team B]
- D <-->|REQUEST / INFORM / REFUSE| A[Reporting Agent]
+ D <-->|CFP / PROPOSE / ACCEPT / REFUSE / INFORM| T[Repair Team A and B]
+ D --> R[Ordinary result-recording function]
 ```
 
-One scheduler advances one queued message per execution step and ticks pending simulated team work. Readings are processed serially; the next starts only after the current workflow, communication and report tasks have drained. UI reruns render the same session-owned Simulation instance. A monotonic clock gates execution steps at the configured application interval. Navigation never consumes an additional step before the interval is due.
+One scheduler advances one queued message per execution step and ticks pending simulated team work. Readings are serial: the next starts after the current workflow, messages and simulated team tasks finish. The reliable in-process queue is not a distributed network transport.
 
-## Roles, PEAS and types
+## PEAS and agent type
 
-| Agent | Tasks and decision rule | Performance | Environment | Actuators | Sensors/percepts | Type and justification |
+| Role | Main behavior and contribution | Performance | Environment | Actuators | Sensors/percepts | Type and justification |
 |---|---|---|---|---|---|---|
-| Reading Agent | Validate required fields and coordinates; strip leakage label from delivery | Valid records delivered once; invalid records explicitly rejected | Configured input sequence | REQUEST delivery; validation event | Selected row/custom input | Reactive: responds directly to incoming reading request |
-| Pressure Monitor | Pressure < configured low limit; request independent usage verification; combine results | Rule-consistent assessment, no label leakage | One selected reading and thresholds | REQUEST verification/localization or INFORM assessment | Pressure and returned flow result | Hybrid: local reaction plus multi-message verification state |
-| Usage Monitor | Flow > configured high limit | Correct independent flow check | Delivered measurement | INFORM result to pressure agent | Flow and verification request | Reactive: direct threshold response |
-| Leak Locator | Copy exact record location, flag major when pressure <= major limit after dual confirmation | Correct record-coordinate association | Record reference and identifiers | REQUEST dispatch with exact location/severity | Confirmed dual-rule request and source coordinates | Reactive: deterministic location lookup, no fabricated route search |
-| Dispatch | Major approval; CFP negotiation; choose smallest offered straight-line distance, tie by team name; coordinate reporting and bounded retries | Acknowledged outcomes, available-team allocation, explicit terminal failures | Active task, offers, supervisor, report deadlines | CFP, ACCEPT, REFUSE, report REQUEST | Assessments, team offers/refusals/completions, report acknowledgments | Deliberative: maintains approval, offer and retry state to select actions |
-| Repair Team A/B | Offer if available; refuse if unavailable; perform finite simulated task; optional configured A failure | Consistent availability, one accepted simulated task completed or failed | Configured team reference coordinate and current reading | PROPOSE, REFUSE, INFORM | CFP, ACCEPT, configured availability and fault | Hybrid: responds to messages and maintains multi-step task state |
-| Reporting Agent | Store each task once, acknowledge or deliberately refuse/drop acknowledgment | Traceability, exactly one stored row per task reference | Report store and reporting task | INFORM acknowledgment or REFUSE | REQUEST, availability/fault configuration | Reactive: request-driven idempotent reporting |
+| Pressure Monitor | Pressure < low limit; request independent flow verification; combine both checks | Correct rule assessment without label leakage | Current validated reading, thresholds and verification response | REQUEST to Usage/Locator, INFORM to Dispatch | Pressure and Usage reply | Hybrid: local reaction plus a multi-message verification workflow |
+| Usage Monitor | Independently compare flow > high limit | Correct flow check | Delivered reading and configured flow limit | INFORM verification result | Flow and verification request | Reactive: direct request-driven threshold check |
+| Leak Locator | Preserve exact per-record coordinates and identifiers; major flag only after dual confirmation | Correct location/severity reference | Assessment, original/custom record and major threshold | REQUEST dispatch | Reading coordinates and pressure | Reactive: deterministic location/severity lookup |
+| Dispatch | Major approval; compare team offers; choose nearest available team; reassign after failure | Appropriate allocation, explicit rejection/unresolved/completed outcomes | Active task, offers, availability and supervisor decision | CFP, ACCEPT, REFUSE; call ordinary recording function | Assessments, offers/refusals, failure/completion INFORM | Deliberative: maintains approval and offer state to choose actions |
+| Repair Team A/B | Offer if available, refuse otherwise; perform finite simulated work; optional A assignment failure | Accepted simulated tasks completed or explicitly failed | Automatically assigned dataset coordinate and current task | PROPOSE, REFUSE, INFORM | CFP, ACCEPT, availability/failure configuration | Hybrid: reactive communication with persistent multi-step task state |
 
-Each instance exposes its execution state, latest action, actual last activity UTC runtime timestamp and any failure details. A failure is an agent/software condition, not a disconnected physical sensor.
+Each instance exposes state, latest action and runtime last-activity timestamp. Team failure is a software simulation condition, not a disconnected sensor.
 
 ## Environment classification
 
-- **Accessible:** selected input records, all agent states and configured parameters are visible to the simulator. This does not imply access to a real water network.
-- **Deterministic:** fixed inputs, configuration and supervisor actions yield the same assessments and ordered outcomes. UUIDs/runtime timestamps identify execution but do not alter decisions.
-- **Dynamic while running:** pending work, queue and timeout counters change automatically between user interactions. Pause freezes the simulation completely.
-- **Discrete:** finite records, messages and integer scheduler steps. Measurements are real-valued data, but the environment advances discretely.
+- **Accessible:** simulator inputs, agent states and configured parameters are visible; no real water-network access is claimed.
+- **Deterministic:** fixed readings, configuration and user decisions yield the same assessments and message order. UUIDs and runtime timestamps identify runs without affecting decisions.
+- **Dynamic while running:** the scheduler changes queue/task state between user actions. Pause freezes execution.
+- **Discrete:** records, messages and integer steps; measurements remain real-valued inputs.
 
-## Parameters and variables
+## Variables and parameters
 
-| Name | Default | Purpose and effect |
+| Parameter/state | Default | Effect |
 |---|---|---|
-| pressure_limit | 54 PSI | Strictly lower pressure triggers one anomaly |
-| flow_limit | 90 L/min | Strictly greater flow triggers the second anomaly |
-| major_limit | 40 PSI | A dual-rule leak at/below this value waits for supervisor approval; must be below pressure_limit |
-| timeout_steps | 20 | Running-step deadline for report acknowledgment; not a wall-clock measurement timestamp |
-| retries | 1 | Extra requests after initial reporting attempt, bounded 0–5 |
-| team_steps | 4 | Finite simulated task duration, not measured physical repair time |
-| playback_interval | 0.5 application seconds | Minimum wall-clock gap between scheduler steps; not source sampling frequency |
-| team_a/b_available | true | Which simulated teams can offer tasks |
-| fail_team_a | false | One deliberate Team A assignment failure per run |
-| reporting_unavailable | false | Reporting Agent refuses requests until restored |
-| reporting_silent | false | Drop acknowledgments to demonstrate timeout exhaustion |
-| team coordinate references | dataset longitude minimum and maximum records | Automatic exact-coordinate simulation positions, not depots |
-| cursor / current_ref / step | 0 / none / 0 | Position, exact active record and execution step |
-| pending_reports | empty | Content, attempts, deadline and source reference for each reporting task |
-| reports / outcomes / events | empty | Actual traceable observations, distinct from user expected outcome |
+| pressure_limit | 54 PSI | Pressure strictly below this value is one anomaly |
+| flow_limit | 90 L/min | Flow strictly above this value is the second anomaly |
+| major_limit | 40 PSI | A dual-rule result at/below this pressure requires approval; must be below low-pressure limit |
+| team_steps | 4 | Finite simulated task duration, not physical repair time |
+| playback_interval | 0.5 seconds | Minimum wall-clock gap between execution steps, not measurement sampling time |
+| team_a/b_available | true | Which teams can offer tasks |
+| fail_team_a | false | One deliberate A assignment failure per run |
+| team coordinate references | minimum/maximum longitude dataset rows | Automatic exact-coordinate simulation positions, not real depots |
+| cursor/current_ref/step | 0/none/0 | Reading position, source reference and execution step |
+| offers/assigned | empty/none | Actual negotiation state |
+| reports/outcomes/events | empty | Traceable records written by ordinary functions, actual task outcomes and failure events |
 
-Thresholds are demonstration rules consistent with earlier project work. They are not calibrated engineering safety thresholds. Vibration is validated, preserved and visualized, but is not an input to the approved pressure/flow decision. Leakage_Flag is never delivered into detection agents. Rule evaluation uses it only as target data.
+There are no reporting-agent availability, report-timeout or reporting-retry settings. Team A can fail once and then refuses subsequent offers until restored. Dispatch re-negotiates against the remaining available team; if no team is available it records an unresolved outcome and terminates that workflow rather than retrying indefinitely.
 
-## Protocols
+## Communication
 
-Every ACL-like message has sender, receiver, performative, content, ontology `raqeeb.water-monitoring.v1`, unique message ID, run/record conversation ID, runtime UTC timestamp, execution step, record reference and optional task reference.
+ACL-like messages contain sender, receiver, performative, content, ontology `raqeeb.water-monitoring.v1`, conversation/message IDs, runtime UTC timestamp, execution step and record/task references.
 
-1. Environment REQUESTs Reading Agent validation; Reading REQUESTs Pressure Monitor with label-free measurements.
-2. Pressure REQUESTs Usage Monitor verification; Usage INFORMs independent flow result.
-3. Pressure REQUESTs Locator when both anomalies agree; otherwise INFORMs Dispatch of Normal/Suspected.
-4. Locator REQUESTs Dispatch with exact record coordinates. A major assessment waits for Supervisor ACCEPT/REFUSE.
-5. Dispatch issues CFP to both teams. Available teams PROPOSE their computed straight-line distance; unavailable/failed teams REFUSE. Dispatch ACCEPTs the closest offer and REFUSEs the unused offer. Team INFORMs accepted/completed or failed; failure triggers re-negotiation with the remaining team.
-6. Dispatch REQUESTs Reporting Agent with unique task reference; Reporting INFORMs completion or REFUSEs unavailability. Missing acknowledgments trigger bounded retries using the same task reference. Idempotence prevents duplicate report rows. Exhaustion creates a report_failed event and terminal Failed run after remaining tasks drain.
+1. The environment validates the row, removes Leakage_Flag and REQUESTs Pressure Monitor directly. Invalid rows create explicit validation-failure events without entering detection.
+2. Pressure REQUESTs Usage verification; Usage INFORMs its independent flow result.
+3. Pressure REQUESTs Locator for a dual anomaly, otherwise INFORMs Dispatch of Normal/Suspected.
+4. Locator REQUESTs Dispatch using the exact reading coordinates. Major results wait for Supervisor ACCEPT/REFUSE.
+5. Dispatch sends CFP to A/B. Available teams PROPOSE computed straight-line distances; unavailable/failed teams REFUSE. The minimum offer wins (ties by team name). Dispatch ACCEPTs the winner and REFUSEs an unused offer. The team INFORMs accepted/completed or failed. Failure triggers a new offer round.
+6. Dispatch records assessments/outcomes through `record_report`. These local calls are not ACL messages and do not impersonate an agent.
 
-For concrete payloads, inspect the committed verification JSON logs. Those are actual executed messages, not prerecorded interface content.
+## UI and data integrity
 
-## State and failure semantics
+Arabic and English are supported. Presentation labels are **District / Section / Pipeline**, mapping to original **Zone / Block / Pipe** fields. Identifiers such as Zone_4 and original CSV columns/bytes remain unchanged. Vibration is retained but not part of the approved pressure/flow rule. Ground-truth labels never enter detection.
 
-Ready → Running ↔ Paused → Completed/Failed. All execution, including already-running team work and deadlines, freezes during Pause. Restoring an agent records a user action but creates no dispatch while paused. Resume continues the same queue. Completed means selected workflows have finished; a completed unresolved/rejected outcome is still explicitly unresolved, not a repaired pipe. Failed means validation, execution or exhausted reporting tasks failed. A handled Team A failure followed by successful Team B completion can still produce Completed, with the failure event retained.
+Inputs and team coordinates are prepared automatically. The main dashboard aggregates all assessed districts and identifies affected record locations. Later normal readings do not hide earlier leak evidence. Pressure/flow use actual reading-order lines; one custom row is displayed as values. Cumulative simulated work uses integer execution steps. Original timestamps, pipeline routes, connectivity, water loss and future readings are never invented.
 
-No interpolation, generated future readings, pipeline routes, measurement times, physical sensor states or water-loss estimates are added. Approved Phase 1 dispatch is demonstrated solely through simulated team state, without altering the source readings.
+The title card is outside the timed Streamlit fragment. Only the dynamic dashboard advances/rerenders on the timer. Routine steps do not call full-app rerun; completion or explicit user controls may rerun the app. This keeps the title's DOM node stable during playback. The Simulation object is session-owned and retained across language/tab changes.
 
-## Automatic interface controls
-
-`controls.py` prepares the full original-order dataset without manual selection. Custom input automatically uses current pressure/flow with the first dataset row as exact location and vibration reference; it has no inherited leakage label. Input edits replace the prepared custom record rather than accumulating a queue. Team positions use exact dataset longitude-extreme records. These automatic choices are deterministic and exported for reproducibility. The main assessment card is separate from execution state, and waits for the current record assessment rather than showing a previous record’s result.
-
-## Bilingual network-wide presentation
-
-The interface aggregates all actual assessments across all zones and automatically lists affected record locations. A later normal reading in another zone does not clear prior leak evidence. Charts use all processed rows in original playback order and plain line marks without points. One custom row is displayed as values instead of inventing a trend. The cumulative chart uses integer execution steps. Arabic/English rendering is implemented in `i18n.py`; original source identifiers and ACL codes are preserved. Changing language renders the same session-owned Simulation instance without advancing/resetting it. Experiments and Reports tabs are removed; failure controls remain in the sidebar and actual message download remains available.
+Ready → Running ↔ Paused → Completed/Failed. Pause freezes all message/task progression. Restoring a team records an explicit user event without dispatching while paused. Completed may include a clearly recorded rejected/unresolved workflow; it does not prove physical repair. Failed covers validation or execution errors. A handled team failure can end Completed after successful reassignment.

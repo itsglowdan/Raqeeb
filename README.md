@@ -18,10 +18,10 @@ Open http://localhost:8501 if needed. Keep the terminal open; Ctrl+C stops the a
 - **اللغة / Language:** Arabic (default) or English. Switching language translates labels, agent states, charts, map details and table headings without resetting execution or entered values. Original dataset identifiers and ACL protocol codes remain unchanged.
 - **Dataset Readings:** all 5,000 original records are prepared automatically in row order. Press Run directly.
 - **Custom Readings:** enter pressure and flow, then Run. Location and reference vibration come automatically from the first original record. This is one unlabeled custom input; it does not generate future sensor measurements or inherit Leakage_Flag.
-- **Agent parameters:** pressure/flow/major rules, report timeout/retries, simulated work duration and playback interval. These are demonstration settings, not official engineering safety limits.
-- **Team conditions:** availability, deliberate Team A assignment failure, Reporting Agent refusal/lost acknowledgment and restoration. These controls allow manual failure tests without an Experiments page.
+- **Agent parameters:** pressure/flow/major rules, simulated work duration and playback interval. These are demonstration settings, not official engineering safety limits.
+- **Team conditions:** availability, deliberate Team A assignment failure, team restoration. These controls allow manual failure tests without an Experiments page.
 - Team locations are assigned automatically to the original records with minimum and maximum longitude. They are simulated start positions, not real depots.
-- **Run / Pause / Resume:** automatic finite execution; Pause freezes all messages, simulated work and timeout counters. Resume continues the same state. Changed inputs/parameters prepare a new run on the next Run click. Reset clears execution using the current inputs.
+- **Run / Pause / Resume:** automatic finite execution; Pause freezes all messages, simulated work and pending task progression. Resume continues the same state. Changed inputs/parameters prepare a new run on the next Run click. Reset clears execution using the current inputs.
 
 ## Network-wide dashboard
 
@@ -39,9 +39,9 @@ OpenStreetMap provides the geographic background only. Attribution is preserved.
 
 ## Agents
 
-The approved five roles remain: Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team (A/B instances). Reading and Reporting agents support validation and traceable acknowledgment. Eight distinct instances communicate through a queued ACL-like protocol with sender/receiver, performative, content, ontology, conversation/message/task IDs, record references, execution step and UTC runtime timestamp.
+The approved five roles are Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team (A/B instances). Six instances represent those five roles. Reading validation and result recording are ordinary functions, not additional agents. Actual ACL-like messages preserve sender/receiver, performative, content, ontology, IDs, record references, execution step and UTC runtime timestamp.
 
-Pressure <54 PSI plus flow >90 L/min gives the default dual-rule leak assessment. One crossed threshold gives Suspected; neither gives Normal. A dual-rule assessment at pressure <=40 PSI needs supervisor approval. Available teams negotiate using CFP/PROPOSE/ACCEPT/REFUSE; Dispatch selects the closest straight-line offer. Team work is simulated only and does not change source readings. Reporting refusal or missing acknowledgments causes bounded retries and explicit failure outcomes. Removing the Reports tab does not remove this backend protocol.
+Pressure <54 PSI plus flow >90 L/min gives the default dual-rule leak assessment. One crossed threshold gives Suspected; neither gives Normal. A dual-rule result at pressure <=40 PSI needs supervisor approval. Available teams negotiate through CFP/PROPOSE/ACCEPT/REFUSE; Dispatch selects the nearest straight-line offer. Team work is simulated and never changes source readings. A configured Team A assignment failure triggers re-negotiation with Team B. If neither is available, the workflow terminates with an explicit unresolved outcome.
 
 Leakage_Flag never enters detection. Default agreement on the supplied dataset: TP 323, TN 4,643, FP 34, FN 0; accuracy 99.32%, precision 90.48%, recall 100%, F1 95.00%. This is agreement with the same dataset labels, not held-out machine-learning or real-world validation.
 
@@ -54,7 +54,7 @@ python -m unittest discover -s tests -v
 python tests/verify_runs.py
 ```
 
-Manual test plans: pressure 65/flow 80 (normal), 50/110 (dual anomaly), and 50/110 with Reporting Agent unavailable (bounded failure). Enter the values yourself; no preset scenarios are loaded. For major approval, use pressure 35/flow 110. Use sidebar fault controls, actual messages and screenshots to document the required three manual scenarios.
+Manual test plans: pressure 65/flow 80 (normal), 50/110 (dual anomaly), and 50/110 with Team A assignment failure enabled (reassignment). Enter the values yourself; no preset scenarios are loaded. For major approval, use pressure 35/flow 110. Team A failure takes effect if A wins the nearest-team negotiation; the technical verification fixes its position to make this reproducible. Use sidebar fault controls, actual messages and screenshots to document the required three manual scenarios.
 
 See [design and PEAS](docs/model_design.md), [verification](docs/verification.md), [technical run exports](docs/verification/), [academic report draft](docs/report.md), and [submission checklist](docs/requirements_review.md). Development verification is not claimed as group-member participation. State is per browser session, not durable database storage.
 
@@ -65,3 +65,5 @@ Main modules: `data_loader.py` (validation/references), `protocol.py` (messages)
 اختاري العربية أو الإنجليزية من أعلى السايد بار. الداتا جاهزة تلقائيًا؛ اضغطي تشغيل. للإدخال اليدوي اكتبي الضغط والتدفق فقط. تظهر النتائج لجميع المناطق، والنظام يحدد المنطقة التي ظهرت فيها المشكلة تلقائيًا. إعدادات تعطل الفرق والوكلاء موجودة في قسم حالة الفرق والوكلاء. حالة التشغيل منفصلة عن حالة الفحص، وتبديل اللغة يحافظ على التشغيل والقيم.
 
 Final academic report, Business Model Canvas, poster, presentation, collaborator access and Blackboard submission remain team submission responsibilities. Drafts/checklist are supplied separately; no automatic submission or physical intervention is performed.
+
+The title remains outside periodic dashboard updates, avoiding per-step title-card remounts. User-facing labels are District, Section and Pipeline; original CSV columns remain Zone, Block and Pipe.
