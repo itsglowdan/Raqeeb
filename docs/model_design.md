@@ -27,7 +27,7 @@ One scheduler advances one queued message per execution step and ticks pending s
 | Usage Monitor | Independently compare flow > high limit | Correct flow check | Delivered reading and configured flow limit | INFORM verification result | Flow and verification request | Reactive: direct request-driven threshold check |
 | Leak Locator | Preserve exact per-record coordinates and identifiers; major flag only after dual confirmation | Correct location/severity reference | Assessment, original/custom record and major threshold | REQUEST dispatch | Reading coordinates and pressure | Reactive: deterministic location/severity lookup |
 | Dispatch | Major approval; compare team offers; choose nearest available team; reassign after failure | Appropriate allocation, explicit rejection/unresolved/completed outcomes | Active task, offers, availability and supervisor decision | CFP, ACCEPT, REFUSE; call ordinary recording function | Assessments, offers/refusals, failure/completion INFORM | Deliberative: maintains approval and offer state to choose actions |
-| Repair Team A/B | Offer if available, refuse otherwise; perform finite simulated work; optional A assignment failure | Accepted simulated tasks completed or explicitly failed | Automatically assigned dataset coordinate and current task | PROPOSE, REFUSE, INFORM | CFP, ACCEPT, availability/failure configuration | Hybrid: reactive communication with persistent multi-step task state |
+| Repair Team A/B | Offer if available, refuse otherwise; perform finite simulated work; optional A/B assignment failure | Accepted simulated tasks completed or explicitly failed | Automatically assigned dataset coordinate and current task | PROPOSE, REFUSE, INFORM | CFP, ACCEPT, availability/failure configuration | Hybrid: reactive communication with persistent multi-step task state |
 
 Each instance exposes state, latest action and runtime last-activity timestamp. Team failure is a software simulation condition, not a disconnected sensor.
 
@@ -48,13 +48,13 @@ Each instance exposes state, latest action and runtime last-activity timestamp. 
 | team_steps | 4 | Finite simulated task duration, not physical repair time |
 | playback_interval | 0.5 seconds | Minimum wall-clock gap between execution steps, not measurement sampling time |
 | team_a/b_available | true | Which teams can offer tasks |
-| fail_team_a | false | One deliberate A assignment failure per run |
+| fail_team_a / fail_team_b | false | Independent one-shot assignment failure for each team per run |
 | team coordinate references | minimum/maximum longitude dataset rows | Automatic exact-coordinate simulation positions, not real depots |
 | cursor/current_ref/step | 0/none/0 | Reading position, source reference and execution step |
 | offers/assigned | empty/none | Actual negotiation state |
 | reports/outcomes/events | empty | Traceable records written by ordinary functions, actual task outcomes and failure events |
 
-There are no reporting-agent availability, report-timeout or reporting-retry settings. Team A can fail once and then refuses subsequent offers until restored. Dispatch re-negotiates against the remaining available team; if no team is available it records an unresolved outcome and terminates that workflow rather than retrying indefinitely.
+There are no reporting-agent availability, report-timeout or reporting-retry settings. Each team can fail once and then refuses subsequent offers until restored. Dispatch re-negotiates against the remaining available team; if no team is available it records an unresolved outcome and terminates that workflow rather than retrying indefinitely.
 
 ## Communication
 
@@ -76,3 +76,7 @@ Inputs and team coordinates are prepared automatically. The main dashboard aggre
 The title card is outside the timed Streamlit fragment. Only the dynamic dashboard advances/rerenders on the timer. Routine steps do not call full-app rerun; completion or explicit user controls may rerun the app. This keeps the title's DOM node stable during playback. The Simulation object is session-owned and retained across language/tab changes.
 
 Ready → Running ↔ Paused → Completed/Failed. Pause freezes all message/task progression. Restoring a team records an explicit user event without dispatching while paused. Completed may include a clearly recorded rejected/unresolved workflow; it does not prove physical repair. Failed covers validation or execution errors. A handled team failure can end Completed after successful reassignment.
+
+## Assignment history
+
+Dispatch records an Assigned attempt when it accepts a team offer. The assigned team changes that attempt to In progress, Failed or Completed based on actual execution. Each attempt has its own ID, record reference, team name, attempt number, reassigned-from team, assigned/finished execution steps and failure reason. Failed attempts are retained after reallocation. The per-record history is exported as `team_attempts` and used by the Incidents table; it does not rely on the last global `assigned` value. All actual messages remain in the MessageBus log; UI row order matches send order.

@@ -1,5 +1,5 @@
 {
-  "run_id": "3bbac7c501a5",
+  "run_id": "5447edb6026b",
   "metadata": {
     "name": "dual_anomaly",
     "purpose": "Technical development verification, not a user-submitted experiment",
@@ -13,7 +13,8 @@
     "playback_interval": 0.5,
     "team_a_available": true,
     "team_b_available": true,
-    "fail_team_a": false
+    "fail_team_a": false,
+    "fail_team_b": false
   },
   "team_coordinate_references": {
     "Team A": {
@@ -33,9 +34,9 @@
   },
   "status": "Completed",
   "step": 14,
-  "created_at_runtime": "2026-11-12T16:46:04.362+00:00",
-  "started_at_runtime": "2026-11-12T16:46:04.362+00:00",
-  "finished_at_runtime": "2026-11-12T16:46:04.363+00:00",
+  "created_at_runtime": "2026-11-12T17:30:32.681+00:00",
+  "started_at_runtime": "2026-11-12T17:30:32.681+00:00",
+  "finished_at_runtime": "2026-11-12T17:30:32.683+00:00",
   "inputs": [
     {
       "record_ref": "CSV-00029",
@@ -65,10 +66,10 @@
   ],
   "reports": [
     {
-      "task_ref": "3bbac7c501a5-R1",
+      "task_ref": "5447edb6026b-R1",
       "record_ref": "CSV-00029",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "conversation_id": "5447edb6026b:CSV-00029",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "outcome": "Dual-rule leak assessment; simulated dispatch requested",
       "assessment": {
         "record_ref": "CSV-00029",
@@ -90,10 +91,10 @@
       "source": "Dataset Readings"
     },
     {
-      "task_ref": "3bbac7c501a5-R2",
+      "task_ref": "5447edb6026b-R2",
       "record_ref": "CSV-00029",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "conversation_id": "5447edb6026b:CSV-00029",
+      "runtime_timestamp": "2026-11-12T17:30:32.683+00:00",
       "outcome": "Simulated task completed by Team A",
       "assessment": {
         "record_ref": "CSV-00029",
@@ -122,10 +123,23 @@
       "step": 14
     }
   ],
+  "team_attempts": [
+    {
+      "assignment_id": "5447edb6026b-A1",
+      "record_ref": "CSV-00029",
+      "team": "Team A",
+      "attempt": 1,
+      "reassigned_from": null,
+      "state": "Completed",
+      "assigned_step": 9,
+      "finished_step": 14,
+      "reason": null
+    }
+  ],
   "events": [],
   "messages": [
     {
-      "message_id": "3bbac7c501a5-M000001",
+      "message_id": "5447edb6026b-M000001",
       "sender": "Environment",
       "receiver": "Pressure Monitor",
       "performative": "REQUEST",
@@ -145,14 +159,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 1,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000002",
+      "message_id": "5447edb6026b-M000002",
       "sender": "Pressure Monitor",
       "receiver": "Usage Monitor",
       "performative": "REQUEST",
@@ -173,14 +187,14 @@
         "pressure_low": true
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 1,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000003",
+      "message_id": "5447edb6026b-M000003",
       "sender": "Usage Monitor",
       "receiver": "Pressure Monitor",
       "performative": "INFORM",
@@ -202,14 +216,14 @@
         "flow_high": true
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 2,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000004",
+      "message_id": "5447edb6026b-M000004",
       "sender": "Pressure Monitor",
       "receiver": "Leak Locator",
       "performative": "REQUEST",
@@ -238,14 +252,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 3,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000005",
+      "message_id": "5447edb6026b-M000005",
       "sender": "Leak Locator",
       "receiver": "Dispatch",
       "performative": "REQUEST",
@@ -283,14 +297,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 4,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000006",
+      "message_id": "5447edb6026b-M000006",
       "sender": "Dispatch",
       "receiver": "Team A",
       "performative": "CFP",
@@ -328,14 +342,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 5,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000007",
+      "message_id": "5447edb6026b-M000007",
       "sender": "Dispatch",
       "receiver": "Team B",
       "performative": "CFP",
@@ -373,14 +387,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 5,
-      "runtime_timestamp": "2026-11-12T16:46:04.362+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000008",
+      "message_id": "5447edb6026b-M000008",
       "sender": "Team A",
       "receiver": "Dispatch",
       "performative": "PROPOSE",
@@ -389,14 +403,14 @@
         "distance_type": "Straight-line; not a route"
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 6,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000009",
+      "message_id": "5447edb6026b-M000009",
       "sender": "Team B",
       "receiver": "Dispatch",
       "performative": "PROPOSE",
@@ -405,14 +419,14 @@
         "distance_type": "Straight-line; not a route"
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 7,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000010",
+      "message_id": "5447edb6026b-M000010",
       "sender": "Dispatch",
       "receiver": "Team A",
       "performative": "ACCEPT",
@@ -450,14 +464,14 @@
         }
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 9,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.681+00:00",
       "record_ref": "CSV-00029",
-      "task_ref": null
+      "task_ref": "5447edb6026b-A1"
     },
     {
-      "message_id": "3bbac7c501a5-M000011",
+      "message_id": "5447edb6026b-M000011",
       "sender": "Dispatch",
       "receiver": "Team B",
       "performative": "REFUSE",
@@ -465,14 +479,14 @@
         "reason": "Closer available offer accepted"
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 9,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.682+00:00",
       "record_ref": "CSV-00029",
       "task_ref": null
     },
     {
-      "message_id": "3bbac7c501a5-M000012",
+      "message_id": "5447edb6026b-M000012",
       "sender": "Team A",
       "receiver": "Dispatch",
       "performative": "INFORM",
@@ -480,14 +494,14 @@
         "state": "accepted"
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 10,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.682+00:00",
       "record_ref": "CSV-00029",
-      "task_ref": null
+      "task_ref": "5447edb6026b-A1"
     },
     {
-      "message_id": "3bbac7c501a5-M000013",
+      "message_id": "5447edb6026b-M000013",
       "sender": "Team A",
       "receiver": "Dispatch",
       "performative": "INFORM",
@@ -495,11 +509,11 @@
         "state": "completed"
       },
       "ontology": "raqeeb.water-monitoring.v1",
-      "conversation_id": "3bbac7c501a5:CSV-00029",
+      "conversation_id": "5447edb6026b:CSV-00029",
       "step": 14,
-      "runtime_timestamp": "2026-11-12T16:46:04.363+00:00",
+      "runtime_timestamp": "2026-11-12T17:30:32.682+00:00",
       "record_ref": "CSV-00029",
-      "task_ref": null
+      "task_ref": "5447edb6026b-A1"
     }
   ]
 }

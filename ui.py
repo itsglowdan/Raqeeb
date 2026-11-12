@@ -10,7 +10,9 @@ from data_loader import LABELS
 from i18n import tr
 from presentation import network_summary
 
-COLUMN_LABELS = {**LABELS,'reading_order':'Processed reading order','record_ref':'Record reference',
+COLUMN_LABELS = {**LABELS,'assigned_team':'Assigned team','attempt':'Assignment attempt',
+    'task_status':'Team task status','reassigned_from':'Reassigned from','assigned_step':'Assigned at step',
+    'finished_step':'Finished at step','incident_result':'Overall incident result','reading_order':'Processed reading order','record_ref':'Record reference',
     'assessment':'Assessment','reason':'Reason','outcome':'Outcome','step':'Execution step',
     'sender':'Sender','receiver':'Receiver','performative':'Performative','content':'Content',
     'conversation_id':'Conversation ID','message_id':'Message ID','ontology':'Ontology',

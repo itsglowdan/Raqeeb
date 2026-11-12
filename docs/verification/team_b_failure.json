@@ -1,0 +1,718 @@
+{
+  "run_id": "7b4a7e4f6e4b",
+  "metadata": {
+    "name": "team_b_failure",
+    "purpose": "Technical development verification, not a user-submitted experiment",
+    "expected_outcome": "Team B fails on assignment; Dispatch reassigns to Team A"
+  },
+  "configuration": {
+    "pressure_limit": 54.0,
+    "flow_limit": 90.0,
+    "major_limit": 40.0,
+    "team_steps": 4,
+    "playback_interval": 0.5,
+    "team_a_available": true,
+    "team_b_available": true,
+    "fail_team_a": false,
+    "fail_team_b": true
+  },
+  "team_coordinate_references": {
+    "Team A": {
+      "record_ref": "CSV-02559",
+      "position": [
+        24.624143,
+        46.572815
+      ]
+    },
+    "Team B": {
+      "record_ref": "CSV-00029",
+      "position": [
+        24.722717,
+        46.704509
+      ]
+    }
+  },
+  "status": "Completed",
+  "step": 21,
+  "created_at_runtime": "2026-11-12T17:30:32.691+00:00",
+  "started_at_runtime": "2026-11-12T17:30:32.691+00:00",
+  "finished_at_runtime": "2026-11-12T17:30:32.694+00:00",
+  "inputs": [
+    {
+      "record_ref": "CSV-00029",
+      "original_index": 29,
+      "Pressure_PSI": 53.99361310081195,
+      "Flow_Rate_Lmin": 99.32113587278566,
+      "Vibration_mms": 2.8927487165878905,
+      "Zone": "Zone_5",
+      "Block": "Block_2",
+      "Pipe": "Pipe_2",
+      "Location_Code": "Zone_5_Block_2_Pipe_2",
+      "Latitude": 24.722717,
+      "Longitude": 46.704509,
+      "Leakage_Flag": 0
+    }
+  ],
+  "assessments": [
+    {
+      "record_ref": "CSV-00029",
+      "assessment": "Leak indicated",
+      "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+      "pressure_low": true,
+      "flow_high": true,
+      "step": 3,
+      "source": "Dataset Readings"
+    }
+  ],
+  "reports": [
+    {
+      "task_ref": "7b4a7e4f6e4b-R1",
+      "record_ref": "CSV-00029",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "outcome": "Dual-rule leak assessment; simulated dispatch requested",
+      "assessment": {
+        "record_ref": "CSV-00029",
+        "assessment": "Leak indicated",
+        "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+        "pressure_low": true,
+        "flow_high": true,
+        "step": 3,
+        "source": "Dataset Readings"
+      },
+      "location": {
+        "Zone": "Zone_5",
+        "Block": "Block_2",
+        "Pipe": "Pipe_2",
+        "Location_Code": "Zone_5_Block_2_Pipe_2",
+        "Latitude": 24.722717,
+        "Longitude": 46.704509
+      },
+      "source": "Dataset Readings"
+    },
+    {
+      "task_ref": "7b4a7e4f6e4b-R2",
+      "record_ref": "CSV-00029",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "runtime_timestamp": "2026-11-12T17:30:32.694+00:00",
+      "outcome": "Simulated task completed by Team A",
+      "assessment": {
+        "record_ref": "CSV-00029",
+        "assessment": "Leak indicated",
+        "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+        "pressure_low": true,
+        "flow_high": true,
+        "step": 3,
+        "source": "Dataset Readings"
+      },
+      "location": {
+        "Zone": "Zone_5",
+        "Block": "Block_2",
+        "Pipe": "Pipe_2",
+        "Location_Code": "Zone_5_Block_2_Pipe_2",
+        "Latitude": 24.722717,
+        "Longitude": 46.704509
+      },
+      "source": "Dataset Readings"
+    }
+  ],
+  "outcomes": [
+    {
+      "record_ref": "CSV-00029",
+      "outcome": "Simulated task completed by Team A",
+      "step": 21
+    }
+  ],
+  "team_attempts": [
+    {
+      "assignment_id": "7b4a7e4f6e4b-A1",
+      "record_ref": "CSV-00029",
+      "team": "Team B",
+      "attempt": 1,
+      "reassigned_from": null,
+      "state": "Failed",
+      "assigned_step": 9,
+      "finished_step": 10,
+      "reason": "User-configured assignment failure"
+    },
+    {
+      "assignment_id": "7b4a7e4f6e4b-A2",
+      "record_ref": "CSV-00029",
+      "team": "Team A",
+      "attempt": 2,
+      "reassigned_from": "Team B",
+      "state": "Completed",
+      "assigned_step": 16,
+      "finished_step": 21,
+      "reason": null
+    }
+  ],
+  "events": [
+    {
+      "step": 12,
+      "type": "team_failure",
+      "agent": "Team B",
+      "record_ref": "CSV-00029"
+    }
+  ],
+  "messages": [
+    {
+      "message_id": "7b4a7e4f6e4b-M000001",
+      "sender": "Environment",
+      "receiver": "Pressure Monitor",
+      "performative": "REQUEST",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 1,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000002",
+      "sender": "Pressure Monitor",
+      "receiver": "Usage Monitor",
+      "performative": "REQUEST",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "pressure_low": true
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 1,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000003",
+      "sender": "Usage Monitor",
+      "receiver": "Pressure Monitor",
+      "performative": "INFORM",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "pressure_low": true,
+        "flow_high": true
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 2,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000004",
+      "sender": "Pressure Monitor",
+      "receiver": "Leak Locator",
+      "performative": "REQUEST",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 3,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000005",
+      "sender": "Leak Locator",
+      "receiver": "Dispatch",
+      "performative": "REQUEST",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 4,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000006",
+      "sender": "Dispatch",
+      "receiver": "Team A",
+      "performative": "CFP",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 5,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000007",
+      "sender": "Dispatch",
+      "receiver": "Team B",
+      "performative": "CFP",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 5,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000008",
+      "sender": "Team A",
+      "receiver": "Dispatch",
+      "performative": "PROPOSE",
+      "content": {
+        "distance_km": 17.23983117078153,
+        "distance_type": "Straight-line; not a route"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 6,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000009",
+      "sender": "Team B",
+      "receiver": "Dispatch",
+      "performative": "PROPOSE",
+      "content": {
+        "distance_km": 0.0,
+        "distance_type": "Straight-line; not a route"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 7,
+      "runtime_timestamp": "2026-11-12T17:30:32.691+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000010",
+      "sender": "Dispatch",
+      "receiver": "Team B",
+      "performative": "ACCEPT",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 9,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": "7b4a7e4f6e4b-A1"
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000011",
+      "sender": "Dispatch",
+      "receiver": "Team A",
+      "performative": "REFUSE",
+      "content": {
+        "reason": "Closer available offer accepted"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 9,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000012",
+      "sender": "Team B",
+      "receiver": "Dispatch",
+      "performative": "INFORM",
+      "content": {
+        "state": "failed"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 10,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": "7b4a7e4f6e4b-A1"
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000013",
+      "sender": "Dispatch",
+      "receiver": "Team A",
+      "performative": "CFP",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 12,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000014",
+      "sender": "Dispatch",
+      "receiver": "Team B",
+      "performative": "CFP",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 12,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000015",
+      "sender": "Team A",
+      "receiver": "Dispatch",
+      "performative": "PROPOSE",
+      "content": {
+        "distance_km": 17.23983117078153,
+        "distance_type": "Straight-line; not a route"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 13,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000016",
+      "sender": "Team B",
+      "receiver": "Dispatch",
+      "performative": "REFUSE",
+      "content": {
+        "reason": "User-configured assignment failure"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 14,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": null
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000017",
+      "sender": "Dispatch",
+      "receiver": "Team A",
+      "performative": "ACCEPT",
+      "content": {
+        "reading": {
+          "record_ref": "CSV-00029",
+          "original_index": 29,
+          "Pressure_PSI": 53.99361310081195,
+          "Flow_Rate_Lmin": 99.32113587278566,
+          "Vibration_mms": 2.8927487165878905,
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        },
+        "assessment": {
+          "record_ref": "CSV-00029",
+          "assessment": "Leak indicated",
+          "reason": "Pressure 53.99 < 54.0 PSI; Flow 99.32 > 90.0 L/min",
+          "pressure_low": true,
+          "flow_high": true,
+          "step": 3,
+          "source": "Dataset Readings"
+        },
+        "major": false,
+        "location": {
+          "Zone": "Zone_5",
+          "Block": "Block_2",
+          "Pipe": "Pipe_2",
+          "Location_Code": "Zone_5_Block_2_Pipe_2",
+          "Latitude": 24.722717,
+          "Longitude": 46.704509
+        }
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 16,
+      "runtime_timestamp": "2026-11-12T17:30:32.692+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": "7b4a7e4f6e4b-A2"
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000018",
+      "sender": "Team A",
+      "receiver": "Dispatch",
+      "performative": "INFORM",
+      "content": {
+        "state": "accepted"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 17,
+      "runtime_timestamp": "2026-11-12T17:30:32.694+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": "7b4a7e4f6e4b-A2"
+    },
+    {
+      "message_id": "7b4a7e4f6e4b-M000019",
+      "sender": "Team A",
+      "receiver": "Dispatch",
+      "performative": "INFORM",
+      "content": {
+        "state": "completed"
+      },
+      "ontology": "raqeeb.water-monitoring.v1",
+      "conversation_id": "7b4a7e4f6e4b:CSV-00029",
+      "step": 21,
+      "runtime_timestamp": "2026-11-12T17:30:32.694+00:00",
+      "record_ref": "CSV-00029",
+      "task_ref": "7b4a7e4f6e4b-A2"
+    }
+  ]
+}

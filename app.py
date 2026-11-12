@@ -9,7 +9,7 @@ import streamlit as st
 from data_loader import load_data
 from simulation import Simulation, Configuration, evaluate
 from controls import automatic_inputs, automatic_team_positions
-from presentation import network_summary, observed_readings, line_chart, outcome_history
+from presentation import network_summary, observed_readings, line_chart, outcome_history, incident_rows, message_rows
 from i18n import tr
 from ui import geographic, table
 
@@ -19,7 +19,7 @@ for key,value in {'language':'ar','run':None,'configuration':asdict(Configuratio
         st.session_state[key]=value
 allowed_config=asdict(Configuration())
 st.session_state.configuration={key:st.session_state.configuration.get(key,value) for key,value in allowed_config.items()}
-if st.session_state.run and any(name in st.session_state.run.agents for name in ['Reading Agent','Reporting Agent']):
+if st.session_state.run and (not hasattr(st.session_state.run,'team_attempts') or any(name in st.session_state.run.agents for name in ['Reading Agent','Reporting Agent'])):
     st.session_state.run=None
 
 with st.sidebar:
@@ -65,7 +65,7 @@ with st.sidebar:
         cfg['playback_interval']=st.slider(t('Playback interval (seconds)'),.5,5.0,float(cfg['playback_interval']),.5,key='playback_interval',disabled=locked)
     with st.expander(t('Team conditions')):
         for key,label in [('team_a_available','Team A available'),('team_b_available','Team B available'),
-                          ('fail_team_a','Fail Team A after assignment')]:
+                          ('fail_team_a','Fail Team A after assignment'),('fail_team_b','Fail Team B after assignment')]:
             cfg[key]=st.checkbox(t(label),value=cfg[key],key=key,disabled=locked)
         if run:
             for name in ['Team A','Team B']:
@@ -131,7 +131,9 @@ def dynamic_view():
     st.subheader(t('Live agents'))
     roles=['Pressure Monitor','Usage Monitor','Leak Locator','Dispatch','Team A','Team B']
     latest=max(run.agents.values(),key=lambda a:a.last_activity or '').name if locked and run.bus.log else None
-    st.markdown('<div class="agent-flow">'+'<span class="flow-arrow">→</span>'.join(f'<span class="flow-node {"working" if name==latest else ""}">{t(name)}</span>' for name in roles)+'</div>',unsafe_allow_html=True)
+    flow_roles=['Pressure Monitor','Usage Monitor','Leak Locator','Dispatch','Repair Team Agent']
+    flow_latest='Repair Team Agent' if latest in ['Team A','Team B'] else latest
+    st.markdown('<div class="agent-flow">'+'<span class="flow-arrow">→</span>'.join(f'<span class="flow-node {"working" if name==flow_latest else ""}">{t(name)}</span>' for name in flow_roles)+'</div>',unsafe_allow_html=True)
     for start in range(0,len(roles),3):
         for column,name in zip(st.columns(3),roles[start:start+3]):
             agent=run.agents[name] if run else None
@@ -139,6 +141,7 @@ def dynamic_view():
             action=t(agent.action if agent else 'No activity yet')
             column.markdown(f'<div class="agent-card {"working" if name==latest else ""}"><div class="agent-card-title"><span class="agent-dot"></span><strong>{t(name)}</strong></div><div class="agent-state">{escape(state)}</div><small>{escape(action)}</small></div>',unsafe_allow_html=True)
     if run:
+        st.caption(t('Recent activity'))
         for message in run.bus.log[-3:]:
             st.markdown(f"**{t(message['sender'])} → {t(message['receiver'])}** · {message['performative']} · {message['record_ref']}")
         if run.waiting_approval:
@@ -194,15 +197,19 @@ def dynamic_view():
     with logs:
         if logs.open:
             if run and run.bus.log:
-                table(pd.DataFrame([{**m,'content':json.dumps(m['content'],ensure_ascii=False)} for m in run.bus.log]),language)
-                st.download_button(t('Download message log'),json.dumps(run.bus.log,indent=2),file_name='raqeeb_messages.json',mime='application/json',on_click='ignore')
+                messages=message_rows(run)
+                messages['content']=messages['content'].map(lambda value:json.dumps(value,ensure_ascii=False))
+                st.caption(t('All messages in the current run')+': '+str(len(messages)))
+                table(messages,language,height=430)
+                st.download_button(t('Download message log'),json.dumps(run.bus.log,indent=2),file_name='raqeeb_messages.json',mime='application/json',key='all_message_download',on_click='ignore')
             else:
                 st.info(t('Press Run to start.'))
     with incidents:
         if incidents.open:
-            if issues:
-                outcomes={o['record_ref']:o['outcome'] for o in run.outcomes}
-                table(pd.DataFrame([{**a,'outcome':outcomes.get(a['record_ref'],'Checking')} for a in issues]),language)
+            rows=incident_rows(run)
+            if not rows.empty:
+                st.caption(t('Each row is an actual team attempt; a reassignment keeps the failed attempt visible.'))
+                table(rows,language)
             else:
                 st.info(t('No outcomes yet.'))
     with evaluation:

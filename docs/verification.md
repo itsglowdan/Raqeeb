@@ -14,7 +14,7 @@ Observed: 5,000 records, ten original columns, no missing values, 323 positive l
 
 ## Backend checks
 
-`python -m unittest discover -s tests -v`: 31 behavioral tests cover validation, precision, display-only field mappings, exact coordinate associations, automatic input preparation, label exclusion, genuine ACL exchanges, rule boundaries, nearest-team negotiation, approval/rejection, pause/resume, failure/reassignment, restoration, unavailable teams, isolated runs, local record traceability, network-wide aggregation, language mappings and plain line charts.
+`python -m unittest discover -s tests -v`: 39 behavioral tests cover validation, precision, display-only field mappings, exact coordinate associations, automatic input preparation, label exclusion, genuine ACL exchanges, rule boundaries, nearest-team negotiation, approval/rejection, pause/resume, failure/reassignment, restoration, unavailable teams, isolated runs, local record traceability, network-wide aggregation, language mappings and plain line charts.
 
 A full 5,000-record run with explicit approval of major assessments completed: 5,000 assessments, 23,236 actual messages, 5,357 local records and no execution-error events. Defaults agree with dataset labels at TP 323 / TN 4,643 / FP 34 / FN 0; these are not field accuracy claims.
 
@@ -25,6 +25,7 @@ A full 5,000-record run with explicit approval of major assessments completed: 5
 | Normal | CSV-00001 | Completed | 4 | 1 | 4 |
 | Dual anomaly | CSV-00029 | Completed | 13 | 2 | 14 |
 | Team A failure | CSV-00029, A fails on assignment | Completed after reassignment to B | 19 | 2 | 21 |
+| Team B failure | CSV-00029, B starts nearest and fails on assignment | Completed after reassignment to A | 19 | 2 | 21 |
 
 Failure handling records one actual team_failure event in the third case. The failed team refuses new offers until restored. The workflow records an explicit unresolved result if neither team is available.
 
@@ -48,3 +49,13 @@ Chromium/Playwright verified:
 This is a finite educational simulation. There is no live sensor deployment, measured physical repair, real pipeline geometry or measurement timestamp. Teams and work duration are simulation state. Rule assessments are separate from supplied labels. Future readings and water-loss estimates are not generated. Session state is not durable storage; the actual message log can be downloaded.
 
 The team must still review academic report/poster/presentation drafts, document its own three manual cases including team failure, add the agreed collaborators later and submit through Blackboard. No invitations or submission were performed automatically.
+
+## Team attempt history and full log update
+
+The flow strip has five role names and ends in Repair Team Agent (وكيل الصيانة), while A/B instance cards retain their separate execution details. Each team now has an independent one-shot assignment-failure setting. Assignment history is saved per record, including assignment ID, team, attempt state, reassignment source, execution steps and overall incident result. ACCEPT and accepted/failed/completed replies carry the corresponding assignment ID as task_ref.
+
+Eight additional behavioral tests cover B→A reassignment, both teams failing with bounded termination, no failure before actual assignment, one-shot failure after restoration, persistence across later readings, paused pending assignments, unassigned/unavailable cases, and equality of complete message-table rows with the actual MessageBus log. These are included in the 39-test total.
+
+The full log table is not limited to the three recent-activity items. It contains every current-run message in send order; complete raw JSON is downloadable. The incidents table keeps failed attempts visible after successful reallocation, with team name/status first. [Team incident history](screenshots/team_incidents.png).
+
+Final browser workflow passed the five-role flow strip, A failure followed by B completion, full 19-message raw download with matching displayed count, B assignment failure with an unresolved outcome when A is unavailable, and Arabic labels for the B failure option and Incidents tab. No uncaught browser page errors occurred.

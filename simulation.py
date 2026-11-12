@@ -17,6 +17,7 @@ class Configuration:
     team_a_available: bool = True
     team_b_available: bool = True
     fail_team_a: bool = False
+    fail_team_b: bool = False
 
     def __post_init__(self):
         for key in ['pressure_limit', 'flow_limit', 'major_limit', 'playback_interval']:
@@ -49,7 +50,8 @@ class Simulation:
         self.assessments, self.reports, self.events, self.outcomes = [], [], [], []
         self.offers = {}
         self.location_content, self.assigned = {}, None
-        self.team_a_fault_consumed = False
+        self.team_faults_consumed = set()
+        self.team_attempts = []
         self.positions = deepcopy(team_positions or {
             'Team A': {'record_ref': refs[0], 'position': [self.readings[0]['Latitude'], self.readings[0]['Longitude']]},
             'Team B': {'record_ref': refs[-1], 'position': [self.readings[-1]['Latitude'], self.readings[-1]['Longitude']]}})
@@ -95,6 +97,26 @@ class Simulation:
         self.agents['Dispatch'].touch('Negotiating', 'Requesting configured team offers')
         for name in ['Team A', 'Team B']:
             self.bus.send('Dispatch', name, 'CFP', self.location_content, self.step, self.current_ref)
+
+    def assign_team(self, team):
+        self.assigned = team
+        prior = [a for a in self.team_attempts if a['record_ref'] == self.current_ref]
+        self.team_attempts.append({'assignment_id': f'{self.run_id}-A{len(self.team_attempts)+1}',
+                                   'record_ref': self.current_ref, 'team': team,
+                                   'attempt': len(prior)+1, 'reassigned_from': prior[-1]['team'] if prior else None,
+                                   'state': 'Assigned', 'assigned_step': self.step, 'finished_step': None,
+                                   'reason': None})
+        return self.team_attempts[-1]
+
+    def update_team_attempt(self, team, state, reason=None):
+        attempt = next((a for a in reversed(self.team_attempts)
+                        if a['record_ref'] == self.current_ref and a['team'] == team), None)
+        if attempt is None:
+            raise ValueError('No matching team assignment')
+        attempt['state'] = state
+        attempt['reason'] = reason
+        if state in ['Failed', 'Completed']:
+            attempt['finished_step'] = self.step
 
     def record_report(self, outcome):
         task_ref = f'{self.run_id}-R{len(self.reports)+1}'
@@ -164,7 +186,7 @@ class Simulation:
                 'created_at_runtime': self.created_at, 'started_at_runtime': self.started_at,
                 'finished_at_runtime': self.finished_at, 'inputs': deepcopy(self.readings),
                 'assessments': deepcopy(self.assessments), 'reports': deepcopy(self.reports),
-                'outcomes': deepcopy(self.outcomes), 'events': deepcopy(self.events), 'messages': deepcopy(self.bus.log)}
+                'outcomes': deepcopy(self.outcomes), 'team_attempts': deepcopy(self.team_attempts), 'events': deepcopy(self.events), 'messages': deepcopy(self.bus.log)}
 
 
 def evaluate(frame, pressure_limit, flow_limit):

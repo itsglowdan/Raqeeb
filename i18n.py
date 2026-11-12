@@ -2,6 +2,15 @@ import re
 
 AR = {
 'Environment': 'البيئة الافتراضية', 'Supervisor': 'المشرف', 'Agent': 'الوكيل',
+'Recent activity': 'آخر نشاط',
+'Repair Team Agent': 'وكيل الصيانة', 'Fail Team B after assignment': 'محاكاة تعطل الفريق ب بعد إسناد المهمة',
+'Assigned team': 'الفريق المسند إليه', 'Assignment attempt': 'محاولة الإسناد', 'Team task status': 'حالة مهمة الفريق',
+'Reassigned from': 'أعيد الإسناد من', 'Assigned at step': 'خطوة الإسناد', 'Finished at step': 'خطوة انتهاء المحاولة',
+'Overall incident result': 'النتيجة النهائية للبلاغ', 'Assigned': 'تم الإسناد', 'In progress': 'جارٍ العمل',
+'Not assigned': 'لم يُسند لفريق', 'No dispatch required': 'لا يتطلب إرسال فريق', 'Awaiting assignment': 'بانتظار الإسناد',
+'Unresolved': 'لم تُحل', 'Rejected': 'مرفوض', 'Pending': 'قيد المعالجة',
+'All messages in the current run': 'جميع رسائل التشغيل الحالي',
+'Each row is an actual team attempt; a reassignment keeps the failed attempt visible.': 'كل صف يمثل محاولة فعلية لفريق؛ تبقى محاولة الفريق المتعطل ظاهرة بعد إعادة الإسناد.',
 'Water network monitoring': 'مراقبة شبكة المياه',
 'Riyadh water network · Simulation': 'شبكة مياه الرياض · محاكاة',
 'Simulation settings': 'إعدادات المحاكاة', 'Reading source and inputs': 'مصدر القراءات',

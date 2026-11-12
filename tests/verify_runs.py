@@ -13,12 +13,18 @@ def main():
     anomaly = frame[(frame.Pressure_PSI > 40)&(frame.Pressure_PSI < 54)&(frame.Flow_Rate_Lmin > 90)].iloc[0].to_dict()
     cases = [('normal', normal, Configuration(), 'Normal; one locally recorded outcome'),
              ('dual_anomaly', anomaly, Configuration(), 'Dual-rule assessment; closest configured team completes simulated task'),
-             ('team_failure', anomaly, Configuration(fail_team_a=True), 'Team A fails on assignment; Dispatch reassigns to Team B')]
+             ('team_failure', anomaly, Configuration(fail_team_a=True), 'Team A fails on assignment; Dispatch reassigns to Team B'),
+             ('team_b_failure', anomaly, Configuration(fail_team_b=True), 'Team B fails on assignment; Dispatch reassigns to Team A')]
     destination = Path(__file__).resolve().parents[1]/'docs'/'verification'
     destination.mkdir(exist_ok=True)
     results = []
     for name, reading, config, expected in cases:
-        system = Simulation([reading], config, {'name': name, 'purpose': 'Technical development verification, not a user-submitted experiment', 'expected_outcome': expected})
+        positions = None
+        if name == 'team_b_failure':
+            far = frame.loc[frame.Longitude.idxmin()]
+            positions = {'Team A': {'record_ref': far.record_ref, 'position': [float(far.Latitude),float(far.Longitude)]},
+                         'Team B': {'record_ref': reading['record_ref'], 'position': [reading['Latitude'],reading['Longitude']]}}
+        system = Simulation([reading], config, {'name': name, 'purpose': 'Technical development verification, not a user-submitted experiment', 'expected_outcome': expected}, team_positions=positions)
         system.run()
         for _ in range(500):
             if system.waiting_approval:
@@ -29,6 +35,8 @@ def main():
         assert system.status == 'Completed'
         if name == 'team_failure':
             assert system.assigned == 'Team B' and any(e['type']=='team_failure' for e in system.events)
+        if name == 'team_b_failure':
+            assert system.assigned == 'Team A' and any(e.get('agent')=='Team B' and e['type']=='team_failure' for e in system.events)
         (destination/f'{name}.json').write_text(json.dumps(system.export(), indent=2))
         results.append({'name': name, 'record_ref': reading['record_ref'], 'status': system.status,
                         'assessment': system.assessments[0]['assessment'], 'messages': len(system.bus.log),

@@ -46,7 +46,7 @@ Pressure, flow and vibration retain original numerical precision internally. Fri
 
 Pressure below 54 PSI and flow above 90 L/min together produce a default rule assessment of Leak indicated. One condition produces Suspected; neither produces Normal. A dual-rule result with pressure at or below 40 PSI requires supervisor approval. These are adjustable demonstration parameters, not official safety limits. Vibration is retained and charted but does not affect this approved dual-monitor rule. Leakage_Flag is removed from the payload before detection and never drives assessment.
 
-Dispatch negotiates with Team A and B through CFP, PROPOSE, ACCEPT and REFUSE. Available teams calculate straight-line distance from configured coordinate references. The shortest offer is accepted. Team A can be configured to fail once on assignment; Dispatch requests new offers and can use Team B. All work is simulated. No physical infrastructure is repaired and no readings are changed after a task completes.
+Dispatch negotiates with Team A and B through CFP, PROPOSE, ACCEPT and REFUSE. Available teams calculate straight-line distance from configured coordinate references. The shortest offer is accepted. Each team can independently be configured to fail once on assignment; Dispatch requests new offers and can use Team B. All work is simulated. No physical infrastructure is repaired and no readings are changed after a task completes.
 
 ### 3.4 Communication and reporting
 
@@ -58,19 +58,20 @@ The implementation is Python with Streamlit, pandas, Altair and Folium/streamlit
 
 The restored light blue interface places inputs and execution controls in the sidebar, with live agents first, monitoring charts next, detail tabs for messages, incidents, evaluation, readings and the map, the map as the last tab, and Riyadh overview at the bottom. Dashboard counters show actual read/assessment/task counts across all districts, not live sensor counts. Reference dataset labels are used only for evaluation and map-label display. The clustered geographic view uses exact coordinates and labels point statuses as dataset labels. Agent activity and actual messages follow. Network-wide pressure and flow charts show processed reading order without point markers; the third chart compares actual rule assessments with completed simulated tasks by execution step. No measurement-time history, water loss or invented routes is displayed.
 
-Run automatically advances the configured sequence and its queued tasks. Pause freezes all execution, including queued messages and team tasks. Resume continues without duplicate readings. Configuration changes apply to a fresh experiment. A sequence finishes after all tasks complete or have explicit failure outcomes. Logs and state persist across navigation; downloaded exports provide permanent evidence beyond the browser session.
+Run automatically advances the configured sequence and its queued tasks. Pause freezes all execution, including queued messages and team tasks. Resume continues without duplicate readings. Configuration changes apply to a fresh experiment. A sequence finishes after all tasks complete or have explicit failure outcomes. Each incident retains its assigned-team attempts, failures, reassignments and simulated task completion. The full actual message log is displayed without truncation. Logs and state persist across navigation; downloaded exports provide permanent evidence beyond the browser session.
 
 ## 5. Scenarios and Verification
 
 The UI has no preset scenarios. Users choose automatic dataset playback or enter custom pressure/flow and configure fault conditions in the sidebar. The interface supports Arabic and English, aggregates results across zones and identifies affected locations automatically. Expected outcomes can be documented separately in the academic test record. Required manual plans are described in README. Expected outcomes remain separate from observed results.
 
-Three technical development verification runs were executed using actual dataset records. Full inputs, configuration, messages and outcomes are in [verification exports](verification/). They are not represented as group-member experiments.
+Four technical development verification runs were executed using actual dataset records. Full inputs, configuration, messages and outcomes are in [verification exports](verification/). They are not represented as group-member experiments.
 
 | Run | Input | Expected | Observed |
 |---|---|---|---|
 | Normal | CSV-00001, default rules | Normal, no dispatch | Completed; Normal; 4 messages; 1 local record; 4 steps |
 | Dual anomaly | CSV-00029, default rules | Dual verification and nearest available simulated team | Completed; Leak indicated; 13 messages; 2 local records; 14 steps |
-| Team failure | CSV-00029; Team A fails after assignment | Failure reported and task reassigned | Completed by Team B; 19 messages; 2 local records; 1 failure event; 21 steps |
+| Team A failure | CSV-00029; Team A fails after assignment | Failure reported and task reassigned | Completed by Team B; 19 messages; 2 local records; 1 failure event; 21 steps |
+| Team B failure | CSV-00029; Team B starts nearest and fails after assignment | Failure reported and task reassigned | Completed by Team A; 19 messages; 2 local records; 1 failure event; 21 steps |
 
 These counts are observed execution values, not constants displayed in the app. Additional behavioral tests verify coordinate associations, label separation, rule boundaries, approval rejection, pause/resume, failure reassignment, unavailable teams, team restoration, local record traceability and isolated runs. Browser verification evidence and remaining limitations are recorded separately in [verification](verification.md).
 

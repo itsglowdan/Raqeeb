@@ -19,7 +19,7 @@ Open http://localhost:8501 if needed. Keep the terminal open; Ctrl+C stops the a
 - **Dataset Readings:** all 5,000 original records are prepared automatically in row order. Press Run directly.
 - **Custom Readings:** enter pressure and flow, then Run. Location and reference vibration come automatically from the first original record. This is one unlabeled custom input; it does not generate future sensor measurements or inherit Leakage_Flag.
 - **Agent parameters:** pressure/flow/major rules, simulated work duration and playback interval. These are demonstration settings, not official engineering safety limits.
-- **Team conditions:** availability, deliberate Team A assignment failure, team restoration. These controls allow manual failure tests without an Experiments page.
+- **Team conditions:** availability, independent one-shot Team A/Team B assignment failures, team restoration. These controls allow manual failure tests without an Experiments page.
 - Team locations are assigned automatically to the original records with minimum and maximum longitude. They are simulated start positions, not real depots.
 - **Run / Pause / Resume:** automatic finite execution; Pause freezes all messages, simulated work and pending task progression. Resume continues the same state. Changed inputs/parameters prepare a new run on the next Run click. Reset clears execution using the current inputs.
 
@@ -41,7 +41,7 @@ OpenStreetMap provides the geographic background only. Attribution is preserved.
 
 The approved five roles are Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team (A/B instances). Six instances represent those five roles. Reading validation and result recording are ordinary functions, not additional agents. Actual ACL-like messages preserve sender/receiver, performative, content, ontology, IDs, record references, execution step and UTC runtime timestamp.
 
-Pressure <54 PSI plus flow >90 L/min gives the default dual-rule leak assessment. One crossed threshold gives Suspected; neither gives Normal. A dual-rule result at pressure <=40 PSI needs supervisor approval. Available teams negotiate through CFP/PROPOSE/ACCEPT/REFUSE; Dispatch selects the nearest straight-line offer. Team work is simulated and never changes source readings. A configured Team A assignment failure triggers re-negotiation with Team B. If neither is available, the workflow terminates with an explicit unresolved outcome.
+Pressure <54 PSI plus flow >90 L/min gives the default dual-rule leak assessment. One crossed threshold gives Suspected; neither gives Normal. A dual-rule result at pressure <=40 PSI needs supervisor approval. Available teams negotiate through CFP/PROPOSE/ACCEPT/REFUSE; Dispatch selects the nearest straight-line offer. Team work is simulated and never changes source readings. A configured assignment failure in either A or B triggers re-negotiation with the remaining available team. Each team can fail once per run; the failure occurs only if it is assigned. If neither is available, the workflow terminates with an explicit unresolved outcome.
 
 Leakage_Flag never enters detection. Default agreement on the supplied dataset: TP 323, TN 4,643, FP 34, FN 0; accuracy 99.32%, precision 90.48%, recall 100%, F1 95.00%. This is agreement with the same dataset labels, not held-out machine-learning or real-world validation.
 
@@ -67,3 +67,9 @@ Main modules: `data_loader.py` (validation/references), `protocol.py` (messages)
 Final academic report, Business Model Canvas, poster, presentation, collaborator access and Blackboard submission remain team submission responsibilities. Drafts/checklist are supplied separately; no automatic submission or physical intervention is performed.
 
 The title remains outside periodic dashboard updates, avoiding per-step title-card remounts. User-facing labels are District, Section and Pipeline; original CSV columns remain Zone, Block and Pipe.
+
+## Team attempts and complete message log
+
+The agent-flow strip shows **Repair Team Agent / وكيل الصيانة** as one role. The two individual team cards still expose A/B execution details. Incidents records every actual assignment attempt with team name, Assigned/In progress/Failed/Completed state, reassignment source, execution steps and overall incident outcome. A failed A/B row remains visible when the other team completes the simulated task. No offered-only or unavailable team is falsely marked assigned/completed. A later reading does not erase an earlier team's incident history.
+
+Message log displays **every actual message in the current run**, in its original order, with a total count and sender/receiver/type/content columns first. The table scrolls without trimming messages, and download contains the same complete raw log. The small Recent activity preview above monitoring is intentionally separate from the full log. Both features support Arabic and English. Underlying dataset columns and coordinates remain unchanged.

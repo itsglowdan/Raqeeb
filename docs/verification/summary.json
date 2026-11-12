@@ -28,5 +28,15 @@
     "reports": 2,
     "events": 1,
     "steps": 21
+  },
+  {
+    "name": "team_b_failure",
+    "record_ref": "CSV-00029",
+    "status": "Completed",
+    "assessment": "Leak indicated",
+    "messages": 19,
+    "reports": 2,
+    "events": 1,
+    "steps": 21
   }
 ]

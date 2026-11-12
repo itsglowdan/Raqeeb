@@ -97,9 +97,9 @@ class Dispatch(Agent):
                     available = {name: distance for name, distance in system.offers.items() if distance is not None}
                     if available:
                         chosen = min(available, key=lambda name: (available[name], name))
-                        system.assigned = chosen
+                        attempt = system.assign_team(chosen)
                         self.touch('Assigning', f'{chosen}: nearest configured available simulated team')
-                        self.send(chosen, 'ACCEPT', system.location_content, message)
+                        self.send(chosen, 'ACCEPT', system.location_content, message, task_ref=attempt['assignment_id'])
                         for other in available:
                             if other != chosen:
                                 self.send(other, 'REFUSE', {'reason': 'Closer available offer accepted'}, message)
@@ -145,16 +145,19 @@ class RepairTeam(Agent):
                 self.touch('Offer sent', f'Straight-line distance {distance:.3f} km')
                 self.send('Dispatch', 'PROPOSE', {'distance_km': distance, 'distance_type': 'Straight-line; not a route'}, message)
         elif message.performative == 'ACCEPT':
-            if self.name == 'Team A' and self.system.config.fail_team_a and not self.system.team_a_fault_consumed:
-                self.system.team_a_fault_consumed = True
+            should_fail = self.system.config.fail_team_a if self.name == 'Team A' else self.system.config.fail_team_b
+            if should_fail and self.name not in self.system.team_faults_consumed:
+                self.system.team_faults_consumed.add(self.name)
                 self.failure = 'User-configured assignment failure'
                 self.available = False
                 self.touch('Failed', self.failure)
+                self.system.update_team_attempt(self.name, 'Failed', self.failure)
                 self.send('Dispatch', 'INFORM', {'state': 'failed'}, message)
             else:
                 self.available = False
                 self.assignment = message
                 self.remaining = self.system.config.team_steps
+                self.system.update_team_attempt(self.name, 'In progress')
                 self.touch('Simulated task', f'{message.record_ref}; no physical intervention')
                 self.send('Dispatch', 'INFORM', {'state': 'accepted'}, message)
         elif not self.failure:
@@ -166,5 +169,6 @@ class RepairTeam(Agent):
             if self.remaining == 0:
                 self.available = True
                 self.touch('Task completed', 'Simulated work only')
+                self.system.update_team_attempt(self.name, 'Completed')
                 self.send('Dispatch', 'INFORM', {'state': 'completed'}, self.assignment)
 

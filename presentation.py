@@ -48,3 +48,44 @@ def outcome_history(run):
         completed += task
         rows.append({'step':step,'leaks':leaks,'completed':completed})
     return pd.DataFrame(rows[-5000:])
+
+
+def incident_rows(run):
+    if not run:
+        return pd.DataFrame()
+    rows_by_ref = {r['record_ref']: r for r in run.readings}
+    outcomes = {o['record_ref']: o['outcome'] for o in run.outcomes}
+    attempts = {}
+    for attempt in run.team_attempts:
+        attempts.setdefault(attempt['record_ref'], []).append(attempt)
+    rows = []
+    for assessment in run.assessments:
+        if assessment['assessment'] == 'Normal':
+            continue
+        ref = assessment['record_ref']
+        reading = rows_by_ref[ref]
+        outcome = outcomes.get(ref, 'Pending')
+        assignments = attempts.get(ref, [])
+        if not assignments:
+            state = ('No dispatch required' if assessment['assessment']=='Suspected' else
+                     'Waiting approval' if run.waiting_approval and run.current_ref==ref else
+                     'Unresolved' if 'unresolved' in outcome else
+                     'Rejected' if 'rejected' in outcome else 'Awaiting assignment')
+            assignments = [{'team':'Not assigned','attempt':0,'state':state,
+                            'reassigned_from':None,'assigned_step':None,'finished_step':None,'reason':None}]
+        for attempt in assignments:
+            rows.append({'record_ref':ref, 'assigned_team':attempt['team'], 'task_status':attempt['state'],
+                         'reassigned_from':attempt['reassigned_from'] or '—', 'incident_result':outcome,
+                         'attempt':attempt['attempt'], **{k:reading[k] for k in ['Zone','Block','Pipe']},
+                         'assessment':assessment['assessment'], 'assigned_step':attempt['assigned_step'],
+                         'finished_step':attempt['finished_step'], 'reason':attempt['reason'] or '—'})
+    return pd.DataFrame(rows)
+
+
+def message_rows(run):
+    if not run:
+        return pd.DataFrame()
+    # Keep every actual message; put the useful reading fields first.
+    columns=['step','sender','receiver','performative','record_ref','content',
+             'message_id','conversation_id','runtime_timestamp','ontology','task_ref']
+    return pd.DataFrame(run.bus.log, columns=columns)
