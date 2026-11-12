@@ -15,7 +15,7 @@ Open http://localhost:8501 if the browser does not open. Leave the terminal runn
 
 ## Prepare readings
 
-1. Open **Settings**. Dataset filters apply consistently to summaries, tables, charts, map and exports.
+1. Open **Reading source and inputs** in the sidebar. Dataset filters apply consistently to summaries, tables, charts, map and exports.
 2. **Dataset Readings:** choose all filtered records or specific record references, then **Add dataset readings**. Original row order is preserved.
 3. **Custom Readings:** select District, Section, Pipeline and one exact reference record for coordinates. Enter pressure, flow and vibration, then **Add reading** for each intended sample. Inputs start empty. They are explicitly unlabeled and never added to the original CSV.
 4. Review the sequence and adjustable pressure/flow/major thresholds, timeout, retry limit and simulated team duration. Both sources use these parameters. Vibration is retained and charted; the approved detection rule uses pressure and flow only.
@@ -32,7 +32,9 @@ A dataset sequence and a custom sequence can also be combined. Dataset records a
 - Major dual-rule assessments wait for user approval in the agent panel. Approve/reject actions are disabled while paused.
 - **Experiments → Start fresh experiment** creates isolated execution state on the next Run. It archives the old run snapshot and keeps the configured sequence. Configuration edits affect a fresh run, not Resume.
 
-The sidebar contains the only execution controls. Dashboard order: dataset summaries, geographic overview, live agents, messages, then charts and readings. The map shows point records and genuine record-count clusters, without invented pipelines. Select a point or reference to view its original details. Map filters fit the displayed records; Reset map view restores the fitted view. Readings table selection links back to the map.
+The previous light blue interface is restored. All inputs and Run/Pause/Resume/Load-Reset controls are in the sidebar. The main view shows execution status, live agents, pressure/flow charts and actual assessments versus simulated task completions. Counters, Message log, Incidents, Dataset evaluation, Experiments, Readings and Reports remain available. **Map is the last tab**, retaining the new Riyadh dataset's exact coordinates, geographic clustering and record details. **Riyadh overview is the final section**; View Zone selects that zone's charts and map.
+
+The underlying agents, finite playback behavior and supplied CSV are unchanged by the interface restoration. Labels remain separate from assessments. Plots use reading order or explicit execution steps, not invented measurement timestamps.
 
 ## Agents and messages
 
@@ -44,7 +46,7 @@ Messages contain message ID, sender, receiver, performative, content, ontology, 
 
 ## User-controlled experiments
 
-No preset scenarios are installed. Use Settings to prepare the desired inputs and Experiments to enter an optional name, purpose and expected outcome. Configure team availability, assignment failure or Reporting Agent refusal/lost acknowledgment there. Restore controls can recover an active or paused agent. Save/export actual outcomes separately from expectations.
+No preset scenarios are installed. Use the sidebar to prepare the desired inputs and Experiments to enter an optional name, purpose and expected outcome. Configure team availability, assignment failure or Reporting Agent refusal/lost acknowledgment there. Restore controls can recover an active or paused agent. Save/export actual outcomes separately from expectations.
 
 Suggested manual test plans (enter these yourself; outcomes below are expectations):
 

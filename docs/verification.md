@@ -42,6 +42,12 @@ Chromium/Playwright exercised the running Streamlit app:
 
 The cloud browser required its external asset requests to use the environment's trusted Python HTTP client and inherited proxy/CA settings. TLS verification remained enabled. This was test-harness networking only; no bypass or proxy configuration was added to the application.
 
+## Interface restoration check
+
+[Current restored interface](screenshots/restored_interface.png)
+
+The classic light blue single-screen interface was restored while retaining the exact supplied Riyadh CSV and the clustered OpenStreetMap component. Browser verification passed sidebar Run/Pause/Resume, finite completion, View Zone selection, the final Map tab, inline record details and Experiments, with no uncaught page errors. All 23 backend tests still pass. The captures below record the earlier dark interface; they remain historical development evidence rather than previews of the restored appearance.
+
 ## Captured UI evidence
 
 These are genuine application captures from development verification, not fabricated mockups or group-member submission evidence.

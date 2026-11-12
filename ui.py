@@ -132,8 +132,11 @@ def geographic(frame, dataset, run):
             if active_ref not in refs:
                 st.caption('Current playback location is outside the dataset filters. Clear the filters to see it.')
         if st.button('View record', key='view_record'):
-            st.session_state.pending_page = 'Readings'
-            st.rerun()
+            if st.session_state.get('classic_layout'):
+                table(pd.DataFrame([row]))
+            else:
+                st.session_state.pending_page = 'Readings'
+                st.rerun()
     st.caption('If the geographic background fails to load, disable it above; points remain at their exact dataset coordinates. Coordinate table:')
     with st.expander('Coordinate view'):
         table(frame[['record_ref', 'Latitude', 'Longitude']])

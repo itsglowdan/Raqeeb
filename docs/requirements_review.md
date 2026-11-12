@@ -11,7 +11,7 @@ The latest user specification is the implementation brief. The attached course g
 | Configurable important parameters | Settings: pressure, flow, major limit, report timeout/retries, simulated work duration |
 | User-controlled scenarios, no presets | Settings sequence builder and Experiments metadata/fault controls |
 | Failure/conflict response | Reporting refusal/timeout with bounded retries; Team A failure and re-negotiation |
-| Interactive status and logs | Dashboard and Experiments actual agent state/messages; sidebar execution controls |
+| Interactive status and logs | Main live-agent panel and Experiments tab with actual state/messages; sidebar execution controls |
 | Data and map integrity | Supplied CSV unchanged; exact per-record coordinates; point clusters; no invented geometry |
 | Python implementation | Python application and Streamlit/Folium/Altair components; no separate frontend app |
 | Setup and dependencies | `requirements.txt`, README Windows/Python commands |
