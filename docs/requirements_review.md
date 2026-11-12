@@ -8,10 +8,10 @@ The latest user specification is the implementation brief. The attached course g
 | Genuine ACL-like communication | `protocol.py` queue, correlated message/task IDs and actual logs |
 | PEAS, agent types, environment | `model_design.md` |
 | Behaviors, variables and protocols | `model_design.md`, source classes |
-| Configurable important parameters | Settings: pressure, flow, major limit, report timeout/retries, simulated work duration |
-| User-controlled scenarios, no presets | Settings sequence builder and Experiments metadata/fault controls |
+| Configurable important parameters | Sidebar: pressure, flow, major limit, report timeout/retries, simulated work duration |
+| User-controlled scenarios, no presets | Automatic dataset/custom input and sidebar fault controls; no preset outcomes |
 | Failure/conflict response | Reporting refusal/timeout with bounded retries; Team A failure and re-negotiation |
-| Interactive status and logs | Main live-agent panel and Experiments tab with actual state/messages; sidebar execution controls |
+| Interactive status and logs | Main live-agent panel and actual message log; sidebar execution controls |
 | Data and map integrity | Supplied CSV unchanged; exact per-record coordinates; point clusters; no invented geometry |
 | Python implementation | Python application and Streamlit/Folium/Altair components; no separate frontend app |
 | Setup and dependencies | `requirements.txt`, README Windows/Python commands |

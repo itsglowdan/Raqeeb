@@ -85,3 +85,7 @@ No interpolation, generated future readings, pipeline routes, measurement times,
 ## Automatic interface controls
 
 `controls.py` prepares the full original-order dataset without manual selection. Custom input automatically uses current pressure/flow with the first dataset row as exact location and vibration reference; it has no inherited leakage label. Input edits replace the prepared custom record rather than accumulating a queue. Team positions use exact dataset longitude-extreme records. These automatic choices are deterministic and exported for reproducibility. The main assessment card is separate from execution state, and waits for the current record assessment rather than showing a previous record’s result.
+
+## Bilingual network-wide presentation
+
+The interface aggregates all actual assessments across all zones and automatically lists affected record locations. A later normal reading in another zone does not clear prior leak evidence. Charts use all processed rows in original playback order and plain line marks without points. One custom row is displayed as values instead of inventing a trend. The cumulative chart uses integer execution steps. Arabic/English rendering is implemented in `i18n.py`; original source identifiers and ACL codes are preserved. Changing language renders the same session-owned Simulation instance without advancing/resetting it. Experiments and Reports tabs are removed; failure controls remain in the sidebar and actual message download remains available.

@@ -1,97 +1,67 @@
 # Raqeeb | رقيب
 
-A Python multi-agent water-leak monitoring simulation. The dashboard uses the supplied Riyadh dataset, exact per-record coordinates and real agent-message exchanges. It is not a physical sensor deployment.
+Python multi-agent water-leak monitoring simulation using the supplied Riyadh dataset. The light blue interface supports Arabic and English. It shows network-wide results and identifies affected zones automatically.
 
-## Install and run
+## Run
 
-Use Python 3.10 or newer. Open CMD or PowerShell **inside the folder containing `app.py` and `requirements.txt`**:
+Python 3.10 or later. Open CMD or PowerShell in the folder containing `app.py` and `requirements.txt`:
 
 ```bat
 python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Open http://localhost:8501 if the browser does not open. Leave the terminal running; Ctrl+C stops the application. GitHub ZIP downloads sometimes contain another `Raqeeb-main` folder: enter that inner folder first. No API key, LLM or paid service is required.
+Open http://localhost:8501 if needed. Keep the terminal open; Ctrl+C stops the app. ZIP downloads may have an extra inner `Raqeeb-main` folder. No API key or LLM is required.
 
-## Automatic reading inputs
+## Controls
 
-1. Choose **Dataset Readings** in the sidebar. All 5,000 original records load automatically in their original row order. Press **Run**; no record selection or Add action is needed.
-2. Or choose **Custom Readings** and enter only pressure and flow. The current values automatically replace the custom input. The first original dataset record supplies its exact location and reference vibration value; no location selection is required. This is an unlabeled custom simulation input, not an original dataset observation.
-3. Optionally adjust detection/coordination parameters in the expandable settings. Both sources use those parameters.
-4. Team start locations are assigned automatically to the records with minimum and maximum dataset longitude. These are explicit software simulation positions, not real maintenance depots. Record references and exact coordinates remain in the run export.
+- **اللغة / Language:** Arabic (default) or English. Switching language translates labels, agent states, charts, map details and table headings without resetting execution or entered values. Original dataset identifiers and ACL protocol codes remain unchanged.
+- **Dataset Readings:** all 5,000 original records are prepared automatically in row order. Press Run directly.
+- **Custom Readings:** enter pressure and flow, then Run. Location and reference vibration come automatically from the first original record. This is one unlabeled custom input; it does not generate future sensor measurements or inherit Leakage_Flag.
+- **Agent parameters:** pressure/flow/major rules, report timeout/retries, simulated work duration and playback interval. These are demonstration settings, not official engineering safety limits.
+- **Team conditions:** availability, deliberate Team A assignment failure, Reporting Agent refusal/lost acknowledgment and restoration. These controls allow manual failure tests without an Experiments page.
+- Team locations are assigned automatically to the original records with minimum and maximum longitude. They are simulated start positions, not real depots.
+- **Run / Pause / Resume:** automatic finite execution; Pause freezes all messages, simulated work and timeout counters. Resume continues the same state. Changed inputs/parameters prepare a new run on the next Run click. Reset clears execution using the current inputs.
 
-There is no Reading Sequence editor, Include all filtered records checkbox, Dataset records picker, Add reading action, or manual team-location picker. Editing custom pressure/flow updates the prepared input automatically; changing source replaces it. The original CSV remains untouched.
+## Network-wide dashboard
 
-The large main status card shows the current reading's **Normal, Suspected or Leak indicated rule assessment**, or Checking while that reading awaits assessment. Before any readings it shows Awaiting readings. It never presents Paused/Running as the water condition. Execution status appears beside the sidebar controls. The reading-progress bar and processed/total counter have been removed.
+There is no manual Zone selector or View Zone action. The large assessment card summarizes all assessed records; a leak assessment remains visible when a later record in another zone is normal. Affected zones and exact Section/Pipeline references are listed automatically. These are accumulated rule assessments, not proof of currently active physical leaks or repairs. The five-zone summary at the bottom shows assessment counts for the whole run.
 
-## Run and monitor
+Pressure and flow use plain connected **lines without point markers**, covering all processed zones in reading order. That axis is not measurement time and does not describe one physical pipe's time series. A single custom input is shown as numeric values with a clear explanation; two observations are needed to draw a changing line. No extra readings are fabricated to create a trend. A third step-line chart displays actual cumulative leak assessments and completed simulated tasks by integer execution step.
 
-- **Run** starts automatic execution of the prepared finite sequence.
-- **Pause** freezes reading advancement, message delivery, simulated team work, report timeout counters and task dispatch.
-- **Resume** preserves the exact run position, configuration and messages.
-- Completion occurs after all selected readings and pending tasks finish or are explicitly reported as failed. The dataset never loops automatically. Browser navigation does not recreate agents.
-- Major dual-rule assessments wait for user approval in the agent panel. Approve/reject actions are disabled while paused.
-- **Experiments → Start fresh experiment** creates isolated execution state on the next Run. It archives the old run snapshot and keeps the configured sequence. Changing inputs or parameters prepares a fresh run on the next Run click; an unchanged paused run uses Resume.
+The remaining detail tabs are **Message log, Incidents, Dataset evaluation, Readings, Map**. Experiments and Reports tabs have been removed. Actual messages can still be downloaded from Message log. Academic report drafts remain in `docs/`; they are separate from the application interface.
 
-The previous light blue interface is restored. All inputs and Run/Pause/Resume/Load-Reset controls are in the sidebar. The main view shows execution status, live agents, pressure/flow charts and actual assessments versus simulated task completions. Counters, Message log, Incidents, Dataset evaluation, Experiments, Readings and Reports remain available. **Map is the last tab**, retaining the new Riyadh dataset's exact coordinates, geographic clustering and record details. **Riyadh overview is the final section**; View Zone selects that zone's charts and map.
+## Map
 
-The underlying agents, finite playback behavior and supplied CSV are unchanged by the interface restoration. Labels remain separate from assessments. Plots use reading order or explicit execution steps, not invented measurement timestamps.
+The final tab retains all original Riyadh record coordinates, real record-count clusters, pan/zoom/fullscreen, background toggle and inline details. It automatically highlights an assessed problem location. Individual points can be clicked for inspection; no zone selection is required. Marker cyan/coral colors refer to dataset labels, separately from runtime assessments. Records sharing Location_Code can have different coordinates and are never averaged or reassigned.
 
-## Agents and messages
+OpenStreetMap provides the geographic background only. Attribution is preserved. Map assets/tiles need internet; a tile error displays a translated warning and coordinate tables remain available. No pipeline routes, flow directions or sensor connectivity are invented.
 
-The five Phase 1 roles are retained: Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team (Team A and Team B instances). Supporting Reading and Reporting agents handle validation and traceable records. There are eight independent agent instances with distinct state.
+## Agents
 
-`Reading → Pressure ↔ Usage → Locator → Dispatch ↔ Teams`, with `Dispatch ↔ Reporting` acknowledgments. Each agent receives queued ACL-like messages rather than sharing one cosmetic detection routine. CFP/PROPOSE/ACCEPT implement actual nearest-available-team negotiation. Team tasks are software simulations only; they do not repair infrastructure or change dataset readings.
+The approved five roles remain: Pressure Monitor, Usage Monitor, Leak Locator, Dispatch and Repair Team (A/B instances). Reading and Reporting agents support validation and traceable acknowledgment. Eight distinct instances communicate through a queued ACL-like protocol with sender/receiver, performative, content, ontology, conversation/message/task IDs, record references, execution step and UTC runtime timestamp.
 
-Messages contain message ID, sender, receiver, performative, content, ontology, conversation ID, execution step, UTC runtime timestamp, record reference and optional task reference. Dataset leakage labels are removed before sending measurements into the assessment protocol. They are used only for dataset summaries and evaluation.
+Pressure <54 PSI plus flow >90 L/min gives the default dual-rule leak assessment. One crossed threshold gives Suspected; neither gives Normal. A dual-rule assessment at pressure <=40 PSI needs supervisor approval. Available teams negotiate using CFP/PROPOSE/ACCEPT/REFUSE; Dispatch selects the closest straight-line offer. Team work is simulated only and does not change source readings. Reporting refusal or missing acknowledgments causes bounded retries and explicit failure outcomes. Removing the Reports tab does not remove this backend protocol.
 
-## User-controlled experiments
+Leakage_Flag never enters detection. Default agreement on the supplied dataset: TP 323, TN 4,643, FP 34, FN 0; accuracy 99.32%, precision 90.48%, recall 100%, F1 95.00%. This is agreement with the same dataset labels, not held-out machine-learning or real-world validation.
 
-No preset scenarios are installed. Use the sidebar to enter custom pressure/flow or select automatic dataset playback and Experiments to enter an optional name, purpose and expected outcome. Configure team availability, assignment failure or Reporting Agent refusal/lost acknowledgment there. Restore controls can recover an active or paused agent. Save/export actual outcomes separately from expectations.
+## Data and tests
 
-Suggested manual test plans (enter these yourself; outcomes below are expectations):
-
-| Test | Inputs and configuration | Expected behavior |
-|---|---|---|
-| Normal | Custom pressure 65, flow 80 at the automatically assigned reference location; default limits | Normal assessment, no team negotiation, acknowledged report |
-| Dual anomaly | Custom pressure 50, flow 110 | Dual-rule assessment, exact location, closest available configured team selected, simulated task recorded |
-| Agent failure | Same dual anomaly, Reporting Agent unavailable; timeout 20 steps, one retry | Actual refusals, bounded retry, explicit failed reporting task and terminal Failed run |
-
-For approval/reassignment, try pressure 35 and flow 110, enable Team A assignment failure; it takes effect if Team A wins the distance negotiation. Approval precedes negotiation; Team B is selected after Team A fails. Normal means neither configured rule is crossed; one crossed rule is Suspected; both crossed rules mean Leak indicated. These are simulation thresholds, not official Saudi engineering limits.
-
-## Data
-
-`data/riyadh_leakage_dataset_with_units.csv` is the supplied file, unchanged byte for byte. It has 5,000 readings, 323 labels equal to 1, ten original columns, five Zone identifiers and 125 Location_Code identifiers. Coordinates range from 24.611017–24.821573 latitude and 46.572815–46.738981 longitude. These are supplied Riyadh demonstration coordinates; their relationship to physical infrastructure is not independently verified.
-
-Each original row receives an in-memory `CSV-00001` style reference and one-based Original Reading Index. Location_Code is not unique: records sharing it can have different coordinates. The application never averages/reassigns those coordinates or invents district names. Friendly District/Section/Pipeline labels only rename the presentation.
-
-There are no measurement timestamps, sensor connectivity states, pipeline routes or flow directions. Row order is not measurement time. Flow is not leak rate or water loss. All execution timestamps and playback intervals are application runtime information.
-
-Default rule evaluation on these same 5,000 records: TP 323, TN 4,643, FP 34, FN 0; accuracy 99.32%, precision 90.48%, recall 100%, F1 95.00%. This is descriptive agreement with dataset labels, not evidence of real-world accuracy or a held-out ML evaluation.
-
-## Tests and evidence
+`data/riyadh_leakage_dataset_with_units.csv` is the supplied 5,000-row, ten-column CSV, unchanged byte for byte. Its 323 positive labels, original field names, precision, IDs and exact per-record coordinates are preserved. An in-memory CSV-00001-style reference and one-based Original Reading Index identify rows. Supplied Riyadh demonstration coordinates have not been independently verified as infrastructure locations. There are no measurement timestamps or pipeline connectivity fields. Flow is not leak rate or water loss.
 
 ```bat
 python -m unittest discover -s tests -v
 python tests/verify_runs.py
 ```
 
-See [verification](docs/verification.md), [actual exported verification runs](docs/verification/), [design and PEAS](docs/model_design.md), [academic report draft](docs/report.md), and [submission checklist](docs/requirements_review.md). Verification runs were executed during development; they do not claim that group members performed the required manual experiments.
+Manual test plans: pressure 65/flow 80 (normal), 50/110 (dual anomaly), and 50/110 with Reporting Agent unavailable (bounded failure). Enter the values yourself; no preset scenarios are loaded. For major approval, use pressure 35/flow 110. Use sidebar fault controls, actual messages and screenshots to document the required three manual scenarios.
 
-## Files
+See [design and PEAS](docs/model_design.md), [verification](docs/verification.md), [technical run exports](docs/verification/), [academic report draft](docs/report.md), and [submission checklist](docs/requirements_review.md). Development verification is not claimed as group-member participation. State is per browser session, not durable database storage.
 
-- `data_loader.py`: validation, stable references, filtering and summaries.
-- `controls.py`: automatic input preparation, automatic team locations and assessment status.
-- `protocol.py`: ACL-like immutable message objects and queue.
-- `agents.py`: independent approved agent roles and supporting agents.
-- `simulation.py`: finite scheduler, state, coordination, retries and exports.
-- `app.py`, `ui.py`, `style.css`: Python Streamlit UI and supported chart/map components.
-- `tests/`: behavioral verification.
+Main modules: `data_loader.py` (validation/references), `protocol.py` (messages), `agents.py` (behaviors), `simulation.py` (scheduler), `controls.py` (automatic inputs), `presentation.py` (network summaries/charts), `i18n.py` (translation), and `app.py`/`ui.py` (Streamlit rendering).
 
-## Limitations and map setup
+## شرح مختصر
 
-Folium/Leaflet and OpenStreetMap supply the background only, without an API key. Preserve map attribution. Internet access is needed for map assets/tiles; the coordinate table remains available if the map background fails. Disable **Geographic background** for a points-only view. A browser tile error displays an explicit map warning. Exact coordinate records can always be exported. No external service enriches monitoring records.
+اختاري العربية أو الإنجليزية من أعلى السايد بار. الداتا جاهزة تلقائيًا؛ اضغطي تشغيل. للإدخال اليدوي اكتبي الضغط والتدفق فقط. تظهر النتائج لجميع المناطق، والنظام يحدد المنطقة التي ظهرت فيها المشكلة تلقائيًا. إعدادات تعطل الفرق والوكلاء موجودة في قسم حالة الفرق والوكلاء. حالة التشغيل منفصلة عن حالة الفحص، وتبديل اللغة يحافظ على التشغيل والقيم.
 
-State is stored per Streamlit browser session, not in a database. Download run JSON before closing the session; saved snapshots are not permanent server storage. Experiments run serially to make coordination traceable. Agent failure handling has bounded retries; the simplified transport is an in-process reliable queue, not a distributed network.
-
-Academic submission also requires the Business Model Canvas, full report, poster, presentation, group/instructor GitHub access and Blackboard submission. Prepared drafts are in `docs/`; the team must review and submit them. The in-app Reports page only exports data and execution evidence.
+Final academic report, Business Model Canvas, poster, presentation, collaborator access and Blackboard submission remain team submission responsibilities. Drafts/checklist are supplied separately; no automatic submission or physical intervention is performed.
