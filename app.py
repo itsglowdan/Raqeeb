@@ -171,6 +171,7 @@ with st.sidebar:
             positions = automatic_team_positions(data)
             current = Simulation(st.session_state.sequence, Configuration(**st.session_state.configuration), st.session_state.metadata, positions)
             st.session_state.run = current
+            st.session_state.focus_zone = current.readings[0]['Zone']
             st.session_state.loaded_signature = signature
         current.run()
         st.session_state.last_tick = time.monotonic()
