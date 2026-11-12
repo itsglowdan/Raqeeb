@@ -8,6 +8,10 @@ Five agent roles work together: Pressure Monitor, Usage Monitor, Leak Locator, D
 
 ![Raqeeb dashboard](docs/screenshots/interface.png)
 
+### Map preview
+
+![Riyadh network map](docs/screenshots/map.png)
+
 ## Getting started
 
 Use Python 3.10 or later. Open CMD or PowerShell in the folder containing `app.py` and `requirements.txt`, then run:
