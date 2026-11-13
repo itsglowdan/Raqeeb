@@ -214,9 +214,7 @@ Execution state belongs to the current browser session and is not stored in a du
 - [Academic report draft](docs/report.md)
 - [Submission checklist](docs/requirements_review.md)
 
-Academic report drafts are separate from the application interface. The final report, Business Model Canvas, poster, presentation, repository collaborator access, and Blackboard submission remain the team's responsibility.
 
-Development verification does not represent group-member participation. The application does not submit academic work automatically or perform physical maintenance.
 
 ## شرح مختصر
 
