@@ -1,6 +1,6 @@
 [
   {
-    "message_id": "4d771ae3677d-M000001",
+    "message_id": "0f47436b7493-M000001",
     "sender": "Environment",
     "receiver": "Pressure Monitor",
     "performative": "REQUEST",
@@ -12,7 +12,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -22,14 +22,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
     "step": 1,
-    "runtime_timestamp": "2026-11-13T22:08:39.046+00:00",
+    "runtime_timestamp": "2026-11-13T23:04:01.039+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000002",
+    "message_id": "0f47436b7493-M000002",
     "sender": "Pressure Monitor",
     "receiver": "Usage Monitor",
     "performative": "REQUEST",
@@ -41,7 +41,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -52,14 +52,14 @@
       "pressure_low": true
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
     "step": 1,
-    "runtime_timestamp": "2026-11-13T22:08:39.046+00:00",
+    "runtime_timestamp": "2026-11-13T23:04:01.039+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000003",
+    "message_id": "0f47436b7493-M000003",
     "sender": "Usage Monitor",
     "receiver": "Pressure Monitor",
     "performative": "INFORM",
@@ -71,7 +71,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -83,14 +83,14 @@
       "flow_high": true
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
     "step": 2,
-    "runtime_timestamp": "2026-11-13T22:08:40.045+00:00",
+    "runtime_timestamp": "2026-11-13T23:04:02.039+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000004",
+    "message_id": "0f47436b7493-M000004",
     "sender": "Pressure Monitor",
     "receiver": "Leak Locator",
     "performative": "REQUEST",
@@ -102,7 +102,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -113,7 +113,7 @@
       "assessment": {
         "record_ref": "CUSTOM-00001",
         "assessment": "Leak indicated",
-        "reason": "Pressure 35.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
         "pressure_low": true,
         "flow_high": true,
         "step": 3,
@@ -121,14 +121,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
     "step": 3,
-    "runtime_timestamp": "2026-11-13T22:08:41.047+00:00",
+    "runtime_timestamp": "2026-11-13T23:04:03.038+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000005",
+    "message_id": "0f47436b7493-M000005",
     "sender": "Leak Locator",
     "receiver": "Dispatch",
     "performative": "REQUEST",
@@ -140,7 +140,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -151,13 +151,13 @@
       "assessment": {
         "record_ref": "CUSTOM-00001",
         "assessment": "Leak indicated",
-        "reason": "Pressure 35.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
         "pressure_low": true,
         "flow_high": true,
         "step": 3,
         "source": "Custom simulation input"
       },
-      "major": true,
+      "major": false,
       "location": {
         "Zone": "Zone_4",
         "Block": "Block_2",
@@ -168,29 +168,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
     "step": 4,
-    "runtime_timestamp": "2026-11-13T22:08:41.605+00:00",
+    "runtime_timestamp": "2026-11-13T23:04:03.588+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000006",
-    "sender": "Supervisor",
-    "receiver": "Dispatch",
-    "performative": "ACCEPT",
-    "content": {
-      "decision": "User approval"
-    },
-    "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 6,
-    "runtime_timestamp": "2026-11-13T22:08:43.344+00:00",
-    "record_ref": "CUSTOM-00001",
-    "task_ref": null
-  },
-  {
-    "message_id": "4d771ae3677d-M000007",
+    "message_id": "0f47436b7493-M000006",
     "sender": "Dispatch",
     "receiver": "Team A",
     "performative": "CFP",
@@ -202,7 +187,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -213,13 +198,13 @@
       "assessment": {
         "record_ref": "CUSTOM-00001",
         "assessment": "Leak indicated",
-        "reason": "Pressure 35.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
         "pressure_low": true,
         "flow_high": true,
         "step": 3,
         "source": "Custom simulation input"
       },
-      "major": true,
+      "major": false,
       "location": {
         "Zone": "Zone_4",
         "Block": "Block_2",
@@ -230,14 +215,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 7,
-    "runtime_timestamp": "2026-11-13T22:08:44.015+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 5,
+    "runtime_timestamp": "2026-11-13T23:04:04.538+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000008",
+    "message_id": "0f47436b7493-M000007",
     "sender": "Dispatch",
     "receiver": "Team B",
     "performative": "CFP",
@@ -249,7 +234,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -260,13 +245,13 @@
       "assessment": {
         "record_ref": "CUSTOM-00001",
         "assessment": "Leak indicated",
-        "reason": "Pressure 35.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
         "pressure_low": true,
         "flow_high": true,
         "step": 3,
         "source": "Custom simulation input"
       },
-      "major": true,
+      "major": false,
       "location": {
         "Zone": "Zone_4",
         "Block": "Block_2",
@@ -277,14 +262,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 7,
-    "runtime_timestamp": "2026-11-13T22:08:44.015+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 5,
+    "runtime_timestamp": "2026-11-13T23:04:04.538+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000009",
+    "message_id": "0f47436b7493-M000008",
     "sender": "Team A",
     "receiver": "Dispatch",
     "performative": "PROPOSE",
@@ -293,14 +278,14 @@
       "distance_type": "Straight-line; not a route"
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 8,
-    "runtime_timestamp": "2026-11-13T22:08:44.997+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 6,
+    "runtime_timestamp": "2026-11-13T23:04:05.550+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000010",
+    "message_id": "0f47436b7493-M000009",
     "sender": "Team B",
     "receiver": "Dispatch",
     "performative": "PROPOSE",
@@ -309,14 +294,14 @@
       "distance_type": "Straight-line; not a route"
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 9,
-    "runtime_timestamp": "2026-11-13T22:08:45.499+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 7,
+    "runtime_timestamp": "2026-11-13T23:04:06.538+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000011",
+    "message_id": "0f47436b7493-M000010",
     "sender": "Dispatch",
     "receiver": "Team A",
     "performative": "ACCEPT",
@@ -328,7 +313,7 @@
         "Location_Code": "Zone_4_Block_2_Pipe_3",
         "Latitude": 24.692188,
         "Longitude": 46.664467,
-        "Pressure_PSI": 35.0,
+        "Pressure_PSI": 50.0,
         "Flow_Rate_Lmin": 110.0,
         "Vibration_mms": 2.928288391770536,
         "record_ref": "CUSTOM-00001",
@@ -339,13 +324,13 @@
       "assessment": {
         "record_ref": "CUSTOM-00001",
         "assessment": "Leak indicated",
-        "reason": "Pressure 35.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
         "pressure_low": true,
         "flow_high": true,
         "step": 3,
         "source": "Custom simulation input"
       },
-      "major": true,
+      "major": false,
       "location": {
         "Zone": "Zone_4",
         "Block": "Block_2",
@@ -356,14 +341,14 @@
       }
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 11,
-    "runtime_timestamp": "2026-11-13T22:08:46.998+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 9,
+    "runtime_timestamp": "2026-11-13T23:04:08.538+00:00",
     "record_ref": "CUSTOM-00001",
-    "task_ref": "4d771ae3677d-A1"
+    "task_ref": "0f47436b7493-A1"
   },
   {
-    "message_id": "4d771ae3677d-M000012",
+    "message_id": "0f47436b7493-M000011",
     "sender": "Dispatch",
     "receiver": "Team B",
     "performative": "REFUSE",
@@ -371,40 +356,227 @@
       "reason": "Closer available offer accepted"
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 11,
-    "runtime_timestamp": "2026-11-13T22:08:46.998+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 9,
+    "runtime_timestamp": "2026-11-13T23:04:08.538+00:00",
     "record_ref": "CUSTOM-00001",
     "task_ref": null
   },
   {
-    "message_id": "4d771ae3677d-M000013",
+    "message_id": "0f47436b7493-M000012",
     "sender": "Team A",
+    "receiver": "Dispatch",
+    "performative": "INFORM",
+    "content": {
+      "state": "failed"
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 10,
+    "runtime_timestamp": "2026-11-13T23:04:09.538+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": "0f47436b7493-A1"
+  },
+  {
+    "message_id": "0f47436b7493-M000013",
+    "sender": "Dispatch",
+    "receiver": "Team A",
+    "performative": "CFP",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 50.0,
+        "Flow_Rate_Lmin": 110.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      },
+      "assessment": {
+        "record_ref": "CUSTOM-00001",
+        "assessment": "Leak indicated",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "pressure_low": true,
+        "flow_high": true,
+        "step": 3,
+        "source": "Custom simulation input"
+      },
+      "major": false,
+      "location": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467
+      }
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 12,
+    "runtime_timestamp": "2026-11-13T23:04:10.539+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "0f47436b7493-M000014",
+    "sender": "Dispatch",
+    "receiver": "Team B",
+    "performative": "CFP",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 50.0,
+        "Flow_Rate_Lmin": 110.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      },
+      "assessment": {
+        "record_ref": "CUSTOM-00001",
+        "assessment": "Leak indicated",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "pressure_low": true,
+        "flow_high": true,
+        "step": 3,
+        "source": "Custom simulation input"
+      },
+      "major": false,
+      "location": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467
+      }
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 12,
+    "runtime_timestamp": "2026-11-13T23:04:10.539+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "0f47436b7493-M000015",
+    "sender": "Team A",
+    "receiver": "Dispatch",
+    "performative": "REFUSE",
+    "content": {
+      "reason": "User-configured assignment failure"
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 13,
+    "runtime_timestamp": "2026-11-13T23:04:11.538+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "0f47436b7493-M000016",
+    "sender": "Team B",
+    "receiver": "Dispatch",
+    "performative": "PROPOSE",
+    "content": {
+      "distance_km": 14.581739751322074,
+      "distance_type": "Straight-line; not a route"
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 14,
+    "runtime_timestamp": "2026-11-13T23:04:12.038+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "0f47436b7493-M000017",
+    "sender": "Dispatch",
+    "receiver": "Team B",
+    "performative": "ACCEPT",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 50.0,
+        "Flow_Rate_Lmin": 110.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      },
+      "assessment": {
+        "record_ref": "CUSTOM-00001",
+        "assessment": "Leak indicated",
+        "reason": "Pressure 50.00 < 54.0 PSI; Flow 110.00 > 90.0 L/min",
+        "pressure_low": true,
+        "flow_high": true,
+        "step": 3,
+        "source": "Custom simulation input"
+      },
+      "major": false,
+      "location": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467
+      }
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 16,
+    "runtime_timestamp": "2026-11-13T23:04:14.048+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": "0f47436b7493-A2"
+  },
+  {
+    "message_id": "0f47436b7493-M000018",
+    "sender": "Team B",
     "receiver": "Dispatch",
     "performative": "INFORM",
     "content": {
       "state": "accepted"
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 12,
-    "runtime_timestamp": "2026-11-13T22:08:47.498+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 17,
+    "runtime_timestamp": "2026-11-13T23:04:15.038+00:00",
     "record_ref": "CUSTOM-00001",
-    "task_ref": "4d771ae3677d-A1"
+    "task_ref": "0f47436b7493-A2"
   },
   {
-    "message_id": "4d771ae3677d-M000014",
-    "sender": "Team A",
+    "message_id": "0f47436b7493-M000019",
+    "sender": "Team B",
     "receiver": "Dispatch",
     "performative": "INFORM",
     "content": {
       "state": "completed"
     },
     "ontology": "raqeeb.water-monitoring.v1",
-    "conversation_id": "4d771ae3677d:CUSTOM-00001",
-    "step": 16,
-    "runtime_timestamp": "2026-11-13T22:08:50.496+00:00",
+    "conversation_id": "0f47436b7493:CUSTOM-00001",
+    "step": 21,
+    "runtime_timestamp": "2026-11-13T23:04:17.538+00:00",
     "record_ref": "CUSTOM-00001",
-    "task_ref": "4d771ae3677d-A1"
+    "task_ref": "0f47436b7493-A2"
   }
 ]
