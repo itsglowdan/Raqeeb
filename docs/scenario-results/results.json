@@ -1,0 +1,100 @@
+[
+  {
+    "scenario": "01-normal",
+    "pressure": 65,
+    "flow": 80,
+    "toggled_controls": [],
+    "supervisor_decision": null,
+    "messages": 4,
+    "failed_teams": [],
+    "completed_teams": []
+  },
+  {
+    "scenario": "02-suspected",
+    "pressure": 50,
+    "flow": 80,
+    "toggled_controls": [],
+    "supervisor_decision": null,
+    "messages": 4,
+    "failed_teams": [],
+    "completed_teams": []
+  },
+  {
+    "scenario": "03-leak-task-completed",
+    "pressure": 50,
+    "flow": 110,
+    "toggled_controls": [],
+    "supervisor_decision": null,
+    "messages": 13,
+    "failed_teams": [],
+    "completed_teams": [
+      "Team A"
+    ]
+  },
+  {
+    "scenario": "04-major-approved",
+    "pressure": 35,
+    "flow": 110,
+    "toggled_controls": [],
+    "supervisor_decision": "Approve dispatch",
+    "messages": 14,
+    "failed_teams": [],
+    "completed_teams": [
+      "Team A"
+    ]
+  },
+  {
+    "scenario": "05-major-rejected",
+    "pressure": 35,
+    "flow": 110,
+    "toggled_controls": [],
+    "supervisor_decision": "Reject dispatch",
+    "messages": 6,
+    "failed_teams": [],
+    "completed_teams": []
+  },
+  {
+    "scenario": "06-team-a-failure",
+    "pressure": 50,
+    "flow": 110,
+    "toggled_controls": [
+      "Fail Team A after assignment"
+    ],
+    "supervisor_decision": null,
+    "messages": 19,
+    "failed_teams": [
+      "Team A"
+    ],
+    "completed_teams": [
+      "Team B"
+    ]
+  },
+  {
+    "scenario": "07-team-b-failure",
+    "pressure": 50,
+    "flow": 110,
+    "toggled_controls": [
+      "Team A available",
+      "Fail Team B after assignment"
+    ],
+    "supervisor_decision": null,
+    "messages": 15,
+    "failed_teams": [
+      "Team B"
+    ],
+    "completed_teams": []
+  },
+  {
+    "scenario": "08-no-teams-available",
+    "pressure": 50,
+    "flow": 110,
+    "toggled_controls": [
+      "Team A available",
+      "Team B available"
+    ],
+    "supervisor_decision": null,
+    "messages": 9,
+    "failed_teams": [],
+    "completed_teams": []
+  }
+]

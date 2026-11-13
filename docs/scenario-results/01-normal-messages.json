@@ -1,0 +1,130 @@
+[
+  {
+    "message_id": "b8d40a36f082-M000001",
+    "sender": "Environment",
+    "receiver": "Pressure Monitor",
+    "performative": "REQUEST",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 65.0,
+        "Flow_Rate_Lmin": 80.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      }
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "b8d40a36f082:CUSTOM-00001",
+    "step": 1,
+    "runtime_timestamp": "2026-11-13T22:07:50.627+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "b8d40a36f082-M000002",
+    "sender": "Pressure Monitor",
+    "receiver": "Usage Monitor",
+    "performative": "REQUEST",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 65.0,
+        "Flow_Rate_Lmin": 80.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      },
+      "pressure_low": false
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "b8d40a36f082:CUSTOM-00001",
+    "step": 1,
+    "runtime_timestamp": "2026-11-13T22:07:50.627+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "b8d40a36f082-M000003",
+    "sender": "Usage Monitor",
+    "receiver": "Pressure Monitor",
+    "performative": "INFORM",
+    "content": {
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 65.0,
+        "Flow_Rate_Lmin": 80.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      },
+      "pressure_low": false,
+      "flow_high": false
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "b8d40a36f082:CUSTOM-00001",
+    "step": 2,
+    "runtime_timestamp": "2026-11-13T22:07:51.180+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  },
+  {
+    "message_id": "b8d40a36f082-M000004",
+    "sender": "Pressure Monitor",
+    "receiver": "Dispatch",
+    "performative": "INFORM",
+    "content": {
+      "assessment": {
+        "record_ref": "CUSTOM-00001",
+        "assessment": "Normal",
+        "reason": "Neither detection threshold crossed",
+        "pressure_low": false,
+        "flow_high": false,
+        "step": 3,
+        "source": "Custom simulation input"
+      },
+      "reading": {
+        "Zone": "Zone_4",
+        "Block": "Block_2",
+        "Pipe": "Pipe_3",
+        "Location_Code": "Zone_4_Block_2_Pipe_3",
+        "Latitude": 24.692188,
+        "Longitude": 46.664467,
+        "Pressure_PSI": 65.0,
+        "Flow_Rate_Lmin": 80.0,
+        "Vibration_mms": 2.928288391770536,
+        "record_ref": "CUSTOM-00001",
+        "coordinate_reference": "CSV-00001",
+        "source": "Custom simulation input",
+        "original_index": null
+      }
+    },
+    "ontology": "raqeeb.water-monitoring.v1",
+    "conversation_id": "b8d40a36f082:CUSTOM-00001",
+    "step": 3,
+    "runtime_timestamp": "2026-11-13T22:07:51.797+00:00",
+    "record_ref": "CUSTOM-00001",
+    "task_ref": null
+  }
+]
