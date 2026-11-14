@@ -194,15 +194,7 @@ No preset scenarios are loaded. Use the sidebar controls, actual message logs, a
 | `i18n.py` | Arabic and English translations |
 | `app.py` / `ui.py` | Streamlit interface |
 
-Execution state belongs to the current browser session and is not stored in a durable database.
 
-## Documentation
-
-- [Model design and PEAS](docs/model_design.md)
-- [Verification](docs/verification.md)
-- [Technical run exports](docs/verification/)
-- [Academic report draft](docs/report.md)
-- [Submission checklist](docs/requirements_review.md)
 
 
 
