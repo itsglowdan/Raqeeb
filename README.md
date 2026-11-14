@@ -21,14 +21,6 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Open http://localhost:8501 if the app does not open automatically. Keep the terminal open while using the app. Press `Ctrl+C` to stop it.
-
-If you downloaded the project as a ZIP, the files may be inside an extra `Raqeeb-main` folder.
-
-No API key or LLM is required.
-
-## Using the app
-
 ### Language
 
 Choose Arabic or English from the sidebar. Arabic is the default.
@@ -46,8 +38,6 @@ Changing the language translates interface labels, agent states, charts, map det
 - **Pause:** Freezes messages, simulated work, and pending tasks.
 - **Resume:** Continues from the same state.
 - **Reset:** Clears execution using the current inputs.
-
-Execution ends after the prepared readings and their tasks have been handled. Changing inputs or parameters prepares a new run on the next Run click.
 
 ### Simulation settings
 
